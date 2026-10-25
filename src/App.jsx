@@ -28,7 +28,12 @@ import {
   Sparkles,
   Calculator,
   LogOut,
-  Send
+  Send,
+  KeyRound,
+  MailCheck,
+  RefreshCw,
+  UserPlus,
+  Check
 } from 'lucide-react';
 
 // --- CONFIGURATION & DESIGN TOKENS ---
@@ -1037,32 +1042,144 @@ const FloatingActions = () => {
   );
 };
 
-// 16. Client Portal Component with Interactive Dashboard Demo
+// 16. Client Portal Component with Gmail OTP Authentication
 const ClientPortal = ({ setCurrentView }) => {
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    name: 'Investor Demo',
+    email: 'investor.demo@mehandaarmy.in',
+    phone: '+91 9812947813',
+    accountNumber: 'MAI-8842-ACC'
+  });
+
+  // Form Fields
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  // OTP Verification States
+  const [otpStep, setOtpStep] = useState(false); // true when waiting for OTP
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpTimer, setOtpTimer] = useState(60);
+  const [otpError, setOtpError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Countdown timer for OTP
+  useEffect(() => {
+    let interval = null;
+    if (otpStep && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (otpTimer === 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [otpStep, otpTimer]);
+
+  // Generate random 6-digit OTP
+  const createRandomOtp = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  // Trigger Send OTP
+  const handleSendOtp = (e) => {
+    if (e) e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setOtpError('Please enter a valid Gmail / Email address.');
+      return;
+    }
+    if (authMode === 'signup' && (!name || !phone || !password)) {
+      setOtpError('Please fill in your Name, Phone, and Password.');
+      return;
+    }
+
     setLoading(true);
-    setErrorMsg('');
+    setOtpError('');
+
+    setTimeout(() => {
+      const code = createRandomOtp();
+      setGeneratedOtp(code);
+      setOtpStep(true);
+      setOtpTimer(60);
+      setLoading(false);
+      setStatusMessage(`Verification code sent to ${email}!`);
+    }, 700);
+  };
+
+  // Verify OTP & Proceed
+  const handleVerifyOtp = (e) => {
+    e.preventDefault();
+    if (enteredOtp.trim() !== generatedOtp.trim()) {
+      setOtpError('Invalid OTP code! Please enter the exact 6-digit code.');
+      return;
+    }
+
+    setLoading(true);
+    setOtpError('');
 
     setTimeout(() => {
       setLoading(false);
-      // Allow demo login
+      const userObj = {
+        name: name.trim() || email.split('@')[0],
+        email: email.trim(),
+        phone: phone.trim() || '+91 9812947813',
+        accountNumber: `MAI-${Math.floor(1000 + Math.random() * 9000)}-VERIFIED`
+      };
+      setCurrentUser(userObj);
+      setIsLoggedIn(true);
+      setOtpStep(false);
+    }, 800);
+  };
+
+  // Direct Password Login
+  const handlePasswordLogin = (e) => {
+    e.preventDefault();
+    if (!email) {
+      setOtpError('Please enter your email.');
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      const userObj = {
+        name: email.split('@')[0],
+        email: email.trim(),
+        phone: '+91 9812947813',
+        accountNumber: `MAI-${Math.floor(1000 + Math.random() * 9000)}-LOGIN`
+      };
+      setCurrentUser(userObj);
       setIsLoggedIn(true);
     }, 800);
   };
 
-  const handleDemoAccess = () => {
-    setEmail('investor.demo@mehandaarmy.in');
+  // Instant Demo Access
+  const handleInstantDemo = () => {
+    setCurrentUser({
+      name: 'Ramesh Kumar (Demo Client)',
+      email: 'ramesh.client@mehandaarmy.in',
+      phone: '+91 9812947813',
+      accountNumber: 'MAI-9812-DEMO'
+    });
     setIsLoggedIn(true);
   };
 
+  // Reset states on switching tab
+  const switchMode = (mode) => {
+    setAuthMode(mode);
+    setOtpStep(false);
+    setEnteredOtp('');
+    setOtpError('');
+    setStatusMessage('');
+  };
+
+  // Logged-in Dashboard
   if (isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-900 text-white font-sans">
@@ -1085,7 +1202,7 @@ const ClientPortal = ({ setCurrentView }) => {
               Back to Website
             </button>
             <button 
-              onClick={() => setIsLoggedIn(false)} 
+              onClick={() => { setIsLoggedIn(false); setOtpStep(false); }} 
               className="text-xs sm:text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors border border-red-500/30"
             >
               <LogOut size={16} /> Logout
@@ -1098,15 +1215,21 @@ const ClientPortal = ({ setCurrentView }) => {
           {/* Welcome Banner */}
           <div className="bg-gradient-to-r from-slate-800 to-slate-800/90 rounded-2xl p-6 border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <span className="text-[#10B981] text-xs font-bold uppercase tracking-wider">Verified Investor Account</span>
-              <h1 className="text-2xl font-black mt-1">Welcome back, Client Investor</h1>
-              <p className="text-sm text-gray-400 mt-0.5">Account ID: MAI-9812-DEMO | Strategy: High-Yield Disciplined Growth</p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[#10B981] text-xs font-bold uppercase tracking-wider mb-2">
+                <CheckCircle size={14} /> Gmail Verified Account
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
+                Welcome back, {currentUser.name}!
+              </h1>
+              <p className="text-sm text-gray-300 mt-1">
+                Account ID: <span className="font-mono text-amber-400">{currentUser.accountNumber}</span> | Email: <span className="text-gray-200">{currentUser.email}</span>
+              </p>
             </div>
             <a 
               href={WHATSAPP_URL} 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="bg-[#25D366] hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-md transition-all"
+              className="bg-[#25D366] hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-md transition-all flex-shrink-0"
             >
               <MessageCircle size={16} /> Contact Dedicated RM
             </a>
@@ -1136,7 +1259,7 @@ const ClientPortal = ({ setCurrentView }) => {
             </div>
           </div>
 
-          {/* Allocation Breakdown & Recent Actions */}
+          {/* Allocation Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 bg-slate-800/90 p-6 rounded-2xl border border-slate-700">
               <h4 className="text-lg font-bold mb-4 flex items-center justify-between">
@@ -1188,7 +1311,7 @@ const ClientPortal = ({ setCurrentView }) => {
 
             <div className="bg-slate-800/90 p-6 rounded-2xl border border-slate-700 flex flex-col justify-between">
               <div>
-                <h4 className="text-lg font-bold mb-4">Dedicated Advisor</h4>
+                <h4 className="text-lg font-bold mb-4">Dedicated Wealth Advisor</h4>
                 <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#F97316] flex items-center justify-center font-bold text-white">
@@ -1196,7 +1319,7 @@ const ClientPortal = ({ setCurrentView }) => {
                     </div>
                     <div>
                       <h5 className="font-bold text-sm">Mehanda Army Desk</h5>
-                      <span className="text-xs text-gray-300">Senior Wealth Manager</span>
+                      <span className="text-xs text-gray-300">Senior Portfolio Manager</span>
                     </div>
                   </div>
                   <div className="mt-3 text-xs space-y-1 text-gray-300 border-t border-slate-600/70 pt-2">
@@ -1233,92 +1356,332 @@ const ClientPortal = ({ setCurrentView }) => {
             <TrendingUp size={30} className="text-white" />
           </div>
         </div>
-        <h2 className="mt-5 text-center text-3xl font-black text-white">
-          Client Portal Login
+        <h2 className="mt-4 text-center text-3xl font-black text-white">
+          {authMode === 'login' ? 'Client Portal Sign In' : 'Create Investor Account'}
         </h2>
         <p className="mt-1 text-center text-sm text-gray-400">
           Mehanda Army Investments
         </p>
+
+        {/* Tab Switcher: Login vs Create Account */}
+        <div className="mt-6 flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+          <button 
+            type="button"
+            onClick={() => switchMode('login')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              authMode === 'login' 
+                ? 'bg-[#F97316] text-white shadow-md' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Client Login
+          </button>
+          <button 
+            type="button"
+            onClick={() => switchMode('signup')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'signup' 
+                ? 'bg-[#10B981] text-white shadow-md' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <UserPlus size={14} /> Create Account (OTP)
+          </button>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
         <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl sm:px-10 border border-gray-100">
-          <form className="space-y-5" onSubmit={handleLogin}>
-            <div>
-              <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                Email Address or Client ID
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. client@mehandaarmy.in"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] text-sm"
-                />
+          
+          {/* Status Message or OTP Simulation Display */}
+          {otpStep && generatedOtp && (
+            <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-emerald-900 animate-fadeIn">
+              <div className="flex items-center gap-2 mb-1.5">
+                <MailCheck size={20} className="text-emerald-600 flex-shrink-0" />
+                <span className="font-bold text-sm">Gmail Verification Code Sent!</span>
+              </div>
+              <p className="text-xs text-emerald-700 mb-2 leading-relaxed">
+                We sent an OTP to <strong className="font-semibold">{email}</strong>.
+              </p>
+              {/* Highlight Demo OTP for easy test */}
+              <div className="bg-white p-2.5 rounded-xl border border-emerald-300 flex justify-between items-center">
+                <span className="text-xs text-gray-600 font-medium">Your 6-Digit OTP:</span>
+                <span className="font-mono text-base font-black text-emerald-700 tracking-widest bg-emerald-100 px-2.5 py-0.5 rounded-lg">
+                  {generatedOtp}
+                </span>
               </div>
             </div>
+          )}
 
-            <div>
-              <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
+          {otpError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2">
+              <AlertCircle size={16} className="flex-shrink-0 text-red-500" />
+              <span>{otpError}</span>
+            </div>
+          )}
+
+          {/* STEP 2: ENTER OTP (For both Signup & Login via OTP) */}
+          {otpStep ? (
+            <form onSubmit={handleVerifyOtp} className="space-y-5 animate-fadeIn">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Enter 6-Digit Gmail OTP *
+                </label>
+                <input 
+                  type="text" 
+                  maxLength="6"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your security password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316] text-sm pr-11"
+                  placeholder="e.g. 482910"
+                  value={enteredOtp}
+                  onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                  className="w-full text-center font-mono text-2xl tracking-widest py-3 border-2 border-[#10B981] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#10B981] bg-gray-50 font-bold"
                 />
+              </div>
+
+              <div className="flex justify-between items-center text-xs">
+                {otpTimer > 0 ? (
+                  <span className="text-gray-500 flex items-center gap-1">
+                    <Clock size={14} /> Resend code in {otpTimer}s
+                  </span>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={handleSendOtp}
+                    className="text-[#F97316] font-bold hover:underline flex items-center gap-1"
+                  >
+                    <RefreshCw size={14} /> Resend OTP to Gmail
+                  </button>
+                )}
                 <button 
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="button" 
+                  onClick={() => setOtpStep(false)}
+                  className="text-gray-500 hover:text-gray-800 underline"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  Change Email
                 </button>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500">Need credentials? Contact your RM.</span>
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-bold text-[#F97316] hover:text-orange-600">
-                Forgot password?
-              </a>
-            </div>
-
-            <div className="pt-2">
-              <button
+              <button 
                 type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-md text-sm font-bold text-white bg-[#0B192C] hover:bg-slate-800 transition-all active:scale-95"
+                disabled={loading || enteredOtp.length < 6}
+                className="w-full py-3.5 px-4 rounded-xl shadow-md text-sm font-bold text-white bg-[#10B981] hover:bg-emerald-600 transition-all active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
-                {loading ? 'Authenticating...' : 'Sign In Securely'}
+                {loading ? 'Verifying...' : (
+                  <>
+                    <Check size={18} /> {authMode === 'signup' ? 'Verify OTP & Create Account' : 'Verify OTP & Sign In'}
+                  </>
+                )}
               </button>
+            </form>
+          ) : authMode === 'signup' ? (
+            /* STEP 1: CREATE ACCOUNT FORM WITH GMAIL OTP */
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Rajesh Kumar"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#10B981] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Gmail / Email Address * (OTP Will Be Sent Here)
+                </label>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="e.g. rajesh@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#10B981] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Mobile Number *
+                </label>
+                <input 
+                  type="tel" 
+                  required
+                  placeholder="e.g. +91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#10B981] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Create Password *
+                </label>
+                <div className="relative">
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#10B981] outline-none pr-10"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 px-4 rounded-xl shadow-md text-sm font-bold text-white bg-[#10B981] hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <KeyRound size={18} /> Send Gmail Verification OTP
+                </button>
+              </div>
+
+              <p className="text-[11px] text-gray-500 text-center leading-relaxed">
+                By creating an account, you agree to Mehanda Army Investments' privacy & security policy.
+              </p>
+            </form>
+          ) : (
+            /* STEP 1: LOGIN FORM (PASSWORD OR GMAIL OTP) */
+            <div>
+              <div className="flex gap-2 mb-4 border-b border-gray-100 pb-3">
+                <button 
+                  type="button"
+                  onClick={() => setLoginMethod('password')}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${loginMethod === 'password' ? 'bg-slate-100 text-[#0B192C]' : 'text-gray-400 hover:text-gray-700'}`}
+                >
+                  Password Login
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setLoginMethod('otp')}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${loginMethod === 'otp' ? 'bg-orange-50 text-[#F97316]' : 'text-gray-400 hover:text-gray-700'}`}
+                >
+                  <KeyRound size={13} /> Sign In via Gmail OTP
+                </button>
+              </div>
+
+              {loginMethod === 'password' ? (
+                <form className="space-y-4" onSubmit={handlePasswordLogin}>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                      Email Address or Client ID *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. client@mehandaarmy.in"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your security password"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316] pr-10"
+                      />
+                      <button 
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <button 
+                      type="button" 
+                      onClick={() => setLoginMethod('otp')} 
+                      className="text-[#F97316] font-semibold hover:underline"
+                    >
+                      Login via OTP instead?
+                    </button>
+                    <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700">
+                      Forgot password?
+                    </a>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-md text-sm font-bold text-white bg-[#0B192C] hover:bg-slate-800 transition-all active:scale-95"
+                    >
+                      {loading ? 'Authenticating...' : 'Sign In Securely'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* Login via OTP form */
+                <form className="space-y-4" onSubmit={handleSendOtp}>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                      Enter Your Registered Gmail *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. client@gmail.com"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl shadow-md text-sm font-bold text-white bg-[#F97316] hover:bg-orange-600 transition-all active:scale-95"
+                    >
+                      <KeyRound size={18} /> Send Login OTP
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          </form>
+          )}
 
           {/* Quick Demo Access Button */}
-          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+          <div className="mt-5 pt-5 border-t border-gray-100 text-center">
             <button
-              onClick={handleDemoAccess}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-[#10B981] rounded-xl text-xs font-bold text-[#10B981] bg-emerald-50 hover:bg-emerald-100 transition-colors"
+              onClick={handleInstantDemo}
+              className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-emerald-300 rounded-xl text-xs font-bold text-[#10B981] bg-emerald-50 hover:bg-emerald-100 transition-colors"
             >
-              <Sparkles size={16} /> Instant Demo Portfolio Preview
+              <Sparkles size={15} /> Instant Demo Portfolio Preview
             </button>
           </div>
           
-          <div className="mt-4">
+          <div className="mt-3">
             <button 
               onClick={() => setCurrentView('home')}
-              className="w-full flex justify-center py-3 px-4 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+              className="w-full flex justify-center py-2.5 px-4 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
             >
               &larr; Back to Public Website
             </button>
