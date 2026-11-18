@@ -23,13 +23,30 @@ import {
 import { DEFAULT_EMERGENCY_RECOVERY_CODES } from '../adminSecurity.js';
 
 function getRpId(headers = {}) {
+  const origin = headers.origin || headers.Origin;
+  if (origin) {
+    try {
+      const originHost = new URL(origin).hostname.toLowerCase();
+      if (originHost === 'www.mehandaarmy.net') return 'mehandaarmy.net';
+      if (originHost === '127.0.0.1') return 'localhost';
+      return originHost;
+    } catch (_) {}
+  }
   const host = (headers['x-forwarded-host'] || headers.host || headers.Host || 'mehandaarmy.net')
     .split(',')[0].trim();
   const hostname = host.split(':')[0].toLowerCase();
+  if (hostname === 'www.mehandaarmy.net') return 'mehandaarmy.net';
   return hostname === '127.0.0.1' ? 'localhost' : hostname;
 }
 
 function getExpectedOrigin(headers = {}) {
+  const origin = headers.origin || headers.Origin;
+  if (origin) {
+    try {
+      const parsed = new URL(origin);
+      return `${parsed.protocol}//${parsed.host}`;
+    } catch (_) {}
+  }
   const forwardedProto = (headers['x-forwarded-proto'] || headers['X-Forwarded-Proto'] || '')
     .split(',')[0].trim().toLowerCase();
   const host = (headers['x-forwarded-host'] || headers.host || headers.Host || 'mehandaarmy.net')
