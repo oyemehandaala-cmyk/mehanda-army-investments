@@ -13,7 +13,7 @@ import {
   getWebAuthnCredentialById,
   isDeviceEnrolled,
 } from '../server/webauthnService.js';
-import adminPasskeyHandler from '../api/admin-passkey.js';
+import adminPasskeyHandler from '../server/api/admin-passkey.js';
 import {
   ADMIN_USERNAME,
   createEnrollmentSession,

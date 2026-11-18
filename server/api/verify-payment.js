@@ -1,4 +1,4 @@
-import { handleVerifyPayment } from '../server/paymentServer.js';
+import { handleVerifyPayment } from '../paymentServer.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -13,3 +13,4 @@ export default async function handler(req, res) {
     return res.status(err.status || 400).json({ success: false, error: err.message });
   }
 }
+

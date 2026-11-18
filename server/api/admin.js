@@ -1,5 +1,5 @@
-import { handleAdminData } from '../server/paymentServer.js';
-import { adminErrorResponse } from '../server/adminAuth.js';
+import { handleAdminData } from '../paymentServer.js';
+import { adminErrorResponse } from '../adminAuth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -17,3 +17,4 @@ export default async function handler(req, res) {
     return res.status(result.status).json(result.body);
   }
 }
+

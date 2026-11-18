@@ -5,8 +5,8 @@ import {
   getEligibleCustomerEmails,
   getEligibleCustomerEmailsWithStats,
   getAnnouncementImage,
-} from '../server/announcementService.js';
-import { adminErrorResponse, assertSameOrigin, AdminAuthError } from '../server/adminAuth.js';
+} from '../announcementService.js';
+import { adminErrorResponse, assertSameOrigin, AdminAuthError } from '../adminAuth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -92,4 +92,5 @@ export default async function handler(req, res) {
     return res.status(err.status || 400).json({ success: false, error: err.message || 'Announcement operation failed.' });
   }
 }
+
 

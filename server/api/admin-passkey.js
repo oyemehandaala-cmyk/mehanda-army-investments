@@ -10,7 +10,7 @@ import {
   consumeEnrollmentSession,
   activeSessionsCache,
   persistLocalSessionsBackup,
-} from '../server/adminAuth.js';
+} from '../adminAuth.js';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -19,8 +19,8 @@ import {
   storeWebAuthnCredential,
   listAdminWebAuthnCredentials,
   deleteWebAuthnCredential,
-} from '../server/webauthnService.js';
-import { DEFAULT_EMERGENCY_RECOVERY_CODES } from '../server/adminSecurity.js';
+} from '../webauthnService.js';
+import { DEFAULT_EMERGENCY_RECOVERY_CODES } from '../adminSecurity.js';
 
 function getRpId(headers = {}) {
   const host = (headers['x-forwarded-host'] || headers.host || headers.Host || 'mehandaarmy.net')
@@ -506,3 +506,4 @@ export default async function handler(req, res) {
     return res.status(result.status).json(result.body);
   }
 }
+

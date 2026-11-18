@@ -14,7 +14,7 @@ import {
   recordPinAttempt,
   DEFAULT_EMERGENCY_RECOVERY_CODES,
 } from '../server/adminSecurity.js';
-import adminSecurityHandler from '../api/admin-security.js';
+import adminSecurityHandler from '../server/api/admin-security.js';
 import { AdminAuthError } from '../server/adminAuth.js';
 
 test('parseUserAgent accurately identifies device, browser, and OS', () => {

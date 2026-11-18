@@ -1,4 +1,4 @@
-import handler from '../../api/register-user.js';
+import handler from '../../server/api/register-user.js';
 
 export default async (req, context) => {
   let body = {};
@@ -41,4 +41,5 @@ export default async (req, context) => {
     headers,
   });
 };
+
 

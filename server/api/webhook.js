@@ -1,4 +1,4 @@
-import { handleCreateOrder } from '../server/paymentServer.js';
+import { handleWebhook } from '../paymentServer.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -7,9 +7,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await handleCreateOrder(req.body, req.headers);
+    const signature = req.headers['x-razorpay-signature'];
+    const result = await handleWebhook(req.rawBody || req.body, signature);
     return res.status(200).json(result);
   } catch (err) {
     return res.status(err.status || 400).json({ success: false, error: err.message });
   }
 }
+

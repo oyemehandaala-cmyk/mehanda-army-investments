@@ -2,7 +2,7 @@ import {
   adminErrorResponse,
   assertSameOrigin,
   requireAdminUser,
-} from '../server/adminAuth.js';
+} from '../adminAuth.js';
 import {
   getAdminSecurityOverview,
   listFailedLogins,
@@ -13,7 +13,7 @@ import {
   emergencyRecoveryUnlock,
   recordPinAttempt,
   DEFAULT_EMERGENCY_RECOVERY_CODES,
-} from '../server/adminSecurity.js';
+} from '../adminSecurity.js';
 
 function getClientIp(headers = {}, request) {
   return headers['x-nf-client-connection-ip'] ||
@@ -144,3 +144,4 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ success: false, error: 'Method not allowed.' });
 }
+

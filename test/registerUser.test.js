@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { handleRegisterUser, RegistrationError } from '../server/registerUserService.js';
-import registerUserHandler from '../api/register-user.js';
+import registerUserHandler from '../server/api/register-user.js';
 import { sendEmailOtp, otpStore } from '../server/emailOtpService.js';
 
 const dummyEnv = {

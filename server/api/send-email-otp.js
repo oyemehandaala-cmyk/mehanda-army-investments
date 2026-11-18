@@ -1,6 +1,6 @@
-import { sendEmailOtp } from '../server/emailOtpService.js';
+import { sendEmailOtp } from '../emailOtpService.js';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseServerKey } from '../server/supabaseServerKey.js';
+import { getSupabaseServerKey } from '../supabaseServerKey.js';
 
 export default async function handler(req, res, dependencies = {}) {
   const env = dependencies.env || process.env;
@@ -51,3 +51,4 @@ export default async function handler(req, res, dependencies = {}) {
     });
   }
 }
+

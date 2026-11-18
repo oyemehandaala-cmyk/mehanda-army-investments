@@ -1,5 +1,5 @@
-import { findUserByEmail, dispatchPasswordResetEmail } from '../server/accountLookup.js';
-import { normalizeEmail, isValidEmail } from '../server/emailOtpService.js';
+import { findUserByEmail, dispatchPasswordResetEmail } from '../accountLookup.js';
+import { normalizeEmail, isValidEmail } from '../emailOtpService.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -60,4 +60,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
 

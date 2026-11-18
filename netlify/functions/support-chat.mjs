@@ -32,3 +32,4 @@ export async function handler(event) {
 
 export { askGemini, getSmartFallbackResponse };
 
+

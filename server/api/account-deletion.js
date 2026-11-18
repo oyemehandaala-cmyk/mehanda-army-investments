@@ -1,7 +1,7 @@
 import {
   customerAccountErrorResponse,
   customerAccountRequest,
-} from '../server/customerAccount.js';
+} from '../customerAccount.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -18,3 +18,4 @@ export default async function handler(req, res) {
     return res.status(result.status).json(result.body);
   }
 }
+

@@ -1,4 +1,4 @@
-import { handleSupportChatRequest, askGemini, getSmartFallbackResponse } from '../server/supportChat.js';
+import { handleSupportChatRequest, askGemini, getSmartFallbackResponse } from '../supportChat.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -26,4 +26,5 @@ export default async function handler(req, res) {
 }
 
 export { askGemini, getSmartFallbackResponse };
+
 

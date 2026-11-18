@@ -17,8 +17,8 @@ import {
   OTP_EXPIRATION_MS,
   MAX_VERIFY_ATTEMPTS,
 } from '../server/emailOtpService.js';
-import sendOtpHandler from '../api/send-email-otp.js';
-import verifyOtpHandler from '../api/verify-email-otp.js';
+import sendOtpHandler from '../server/api/send-email-otp.js';
+import verifyOtpHandler from '../server/api/verify-email-otp.js';
 import { handleContactEnquiry } from '../server/contactEnquiryHandler.js';
 import { handleInvestmentEnquiry } from '../server/paymentServer.js';
 import { handleStudentLoanEnquiryRequest } from '../server/studentLoanEnquiries.js';

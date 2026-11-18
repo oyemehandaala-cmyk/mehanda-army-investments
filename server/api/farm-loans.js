@@ -1,5 +1,5 @@
-import { handleFarmLoanRequest } from '../server/farmLoanServer.js';
-import { assertSameOrigin } from '../server/adminAuth.js';
+import { handleFarmLoanRequest } from '../farmLoanServer.js';
+import { assertSameOrigin } from '../adminAuth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -31,4 +31,5 @@ export default async function handler(req, res) {
     return res.status(status).json({ success: false, error: message });
   }
 }
+
 

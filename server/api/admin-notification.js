@@ -1,5 +1,5 @@
-import { handleAdminNotificationRequest } from '../server/statusNotificationService.js';
-import { adminErrorResponse } from '../server/adminAuth.js';
+import { handleAdminNotificationRequest } from '../statusNotificationService.js';
+import { adminErrorResponse } from '../adminAuth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -22,4 +22,5 @@ export default async function handler(req, res) {
     return res.status(result.status).json(result.body);
   }
 }
+
 

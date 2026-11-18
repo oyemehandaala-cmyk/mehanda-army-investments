@@ -1,5 +1,5 @@
-import { handleStudentLoanDocumentRequest } from '../server/studentLoanEnquiries.js';
-import { assertSameOrigin } from '../server/adminAuth.js';
+import { handleStudentLoanDocumentRequest } from '../studentLoanEnquiries.js';
+import { assertSameOrigin } from '../adminAuth.js';
 
 export const config = {
   api: {
@@ -30,3 +30,4 @@ export default async function handler(req, res) {
     return res.status(status).json({ success: false, error: message });
   }
 }
+

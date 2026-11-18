@@ -12,8 +12,8 @@ import {
   updateAdminProfile,
   getAdminConfiguration,
   createEnrollmentSession,
-} from '../server/adminAuth.js';
-import { isDeviceEnrolled } from '../server/webauthnService.js';
+} from '../adminAuth.js';
+import { isDeviceEnrolled } from '../webauthnService.js';
 
 function getClientIp(headers = {}, request) {
   return headers['x-nf-client-connection-ip'] ||
@@ -143,3 +143,4 @@ export default async function handler(req, res) {
     return res.status(result.status).json(result.body);
   }
 }
+

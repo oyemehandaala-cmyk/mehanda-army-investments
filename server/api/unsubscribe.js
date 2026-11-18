@@ -1,4 +1,4 @@
-import { handleUnsubscribeCustomer } from '../server/announcementService.js';
+import { handleUnsubscribeCustomer } from '../announcementService.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -32,4 +32,5 @@ export default async function handler(req, res) {
     return res.status(400).json({ success: false, error: err.message });
   }
 }
+
 

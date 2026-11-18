@@ -1,4 +1,4 @@
-import { handleContactEnquiry, handleUpdateContactEnquiry } from '../server/contactEnquiryHandler.js';
+import { handleContactEnquiry, handleUpdateContactEnquiry } from '../contactEnquiryHandler.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -23,4 +23,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ success: false, error: 'Method not allowed' });
 }
+
 

@@ -35,3 +35,4 @@ export async function handler(event) {
     return { statusCode: result.status, headers, body: JSON.stringify(result.body) };
   }
 }
+

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { findUserByEmail } from '../server/accountLookup.js';
-import verifyAccountExistsHandler from '../api/verify-account-exists.js';
+import verifyAccountExistsHandler from '../server/api/verify-account-exists.js';
 import { sendEmailOtp, EmailOtpError } from '../server/emailOtpService.js';
 import { handleRegisterUser, RegistrationError } from '../server/registerUserService.js';
 import { getAuthErrorMessage } from '../src/lib/authError.js';

@@ -26,16 +26,16 @@ import {
   customerAccountErrorResponse,
   customerAccountRequest,
 } from './server/customerAccount.js';
-import adminAuthHandler from './api/admin-auth.js';
-import adminPasskeyHandler from './api/admin-passkey.js';
-import adminSecurityHandler from './api/admin-security.js';
-import adminNotificationHandler from './api/admin-notification.js';
-import adminAnnouncementsHandler from './api/admin-announcements.js';
-import unsubscribeHandler from './api/unsubscribe.js';
-import sendEmailOtpHandler from './api/send-email-otp.js';
-import verifyEmailOtpHandler from './api/verify-email-otp.js';
-import registerUserHandler from './api/register-user.js';
-import verifyAccountExistsHandler from './api/verify-account-exists.js';
+import adminAuthHandler from './server/api/admin-auth.js';
+import adminPasskeyHandler from './server/api/admin-passkey.js';
+import adminSecurityHandler from './server/api/admin-security.js';
+import adminNotificationHandler from './server/api/admin-notification.js';
+import adminAnnouncementsHandler from './server/api/admin-announcements.js';
+import unsubscribeHandler from './server/api/unsubscribe.js';
+import sendEmailOtpHandler from './server/api/send-email-otp.js';
+import verifyEmailOtpHandler from './server/api/verify-email-otp.js';
+import registerUserHandler from './server/api/register-user.js';
+import verifyAccountExistsHandler from './server/api/verify-account-exists.js';
 import { adminErrorResponse, assertSameOrigin } from './server/adminAuth.js';
 import { handleStudentLoanDocumentRequest } from './server/studentLoanEnquiries.js';
 import { handleFarmLoanRequest } from './server/farmLoanServer.js';

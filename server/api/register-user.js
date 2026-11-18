@@ -1,4 +1,4 @@
-import { handleRegisterUser } from '../server/registerUserService.js';
+import { handleRegisterUser } from '../registerUserService.js';
 
 export default async function handler(req, res, dependencies = {}) {
   const env = dependencies.env || process.env;
@@ -23,4 +23,5 @@ export default async function handler(req, res, dependencies = {}) {
     });
   }
 }
+
 
