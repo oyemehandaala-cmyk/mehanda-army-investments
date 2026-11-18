@@ -35,12 +35,20 @@ export default function GoogleBrandedSignInButton({
             try {
               const { data, error } = await authService.signInWithGoogleIdToken(response.credential);
               if (error) {
-                if (onError) onError(getAuthErrorMessage(error, 'oauth'));
+                console.warn('Google ID token sign-in failed, trying standard OAuth redirect:', error);
+                const oauthRes = await authService.signInWithGoogle();
+                if (oauthRes?.error && onError) {
+                  onError(getAuthErrorMessage(oauthRes.error, 'oauth'));
+                }
               } else if (data?.user) {
                 if (onSuccess) onSuccess(toAuthenticatedUser(data.user));
               }
             } catch (err) {
-              if (onError) onError(getAuthErrorMessage(err, 'oauth'));
+              console.warn('Google ID token sign-in exception, trying standard OAuth redirect:', err);
+              const oauthRes = await authService.signInWithGoogle();
+              if (oauthRes?.error && onError) {
+                onError(getAuthErrorMessage(oauthRes.error, 'oauth'));
+              }
             } finally {
               if (setLoading) setLoading(false);
             }
@@ -79,12 +87,33 @@ export default function GoogleBrandedSignInButton({
     };
   }, [onSuccess, onError, setLoading]);
 
-  const handleButtonClick = () => {
+  const handleButtonClick = async () => {
     if (disabled) return;
     if (window.google?.accounts?.id) {
       try {
-        window.google.accounts.id.prompt();
-      } catch (_) {}
+        window.google.accounts.id.prompt((notification) => {
+          if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
+            if (setLoading) setLoading(true);
+            authService.signInWithGoogle()
+              .then(({ error }) => {
+                if (error && onError) onError(getAuthErrorMessage(error, 'oauth'));
+              })
+              .finally(() => {
+                if (setLoading) setLoading(false);
+              });
+          }
+        });
+      } catch (_) {
+        if (setLoading) setLoading(true);
+        const { error } = await authService.signInWithGoogle();
+        if (setLoading) setLoading(false);
+        if (error && onError) onError(getAuthErrorMessage(error, 'oauth'));
+      }
+    } else {
+      if (setLoading) setLoading(true);
+      const { error } = await authService.signInWithGoogle();
+      if (setLoading) setLoading(false);
+      if (error && onError) onError(getAuthErrorMessage(error, 'oauth'));
     }
   };
 
