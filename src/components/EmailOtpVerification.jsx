@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, CheckCircle2, Clock, RefreshCw, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
+import { getApiUrl } from '../lib/apiConfig';
 
 export default function EmailOtpVerification({
   email = '',
@@ -99,7 +100,7 @@ export default function EmailOtpVerification({
     setIsSending(true);
 
     try {
-      const response = await fetch('/api/send-email-otp', {
+      const response = await fetch(getApiUrl('/api/send-email-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: targetEmail, purpose }),
@@ -134,7 +135,7 @@ export default function EmailOtpVerification({
     setIsVerifying(true);
 
     try {
-      const response = await fetch('/api/verify-email-otp', {
+      const response = await fetch(getApiUrl('/api/verify-email-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: (email || '').trim().toLowerCase(), otp: cleanOtp }),

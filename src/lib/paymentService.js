@@ -8,6 +8,8 @@
  * - Scopes payment history to customer identity.
  */
 
+import { getApiUrl } from './apiConfig.js';
+
 export const ADVISORY_SERVICES = [
   {
     id: 'srv_portfolio_review',
@@ -105,7 +107,7 @@ function getPaymentAuthorizationHeader(accessToken) {
  */
 export async function createPaymentOrder({ serviceId, customAmount, customerName, customerEmail, customerPhone, accessToken }) {
   const authorization = getPaymentAuthorizationHeader(accessToken);
-  const res = await fetch('/api/create-order', {
+  const res = await fetch(getApiUrl('/api/create-order'), {
     method: 'POST',
     headers: { Authorization: authorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -132,7 +134,7 @@ export async function createPaymentOrder({ serviceId, customAmount, customerName
  */
 export async function verifyPaymentSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature, customer, service, accessToken }) {
   const authorization = getPaymentAuthorizationHeader(accessToken);
-  const res = await fetch('/api/verify-payment', {
+  const res = await fetch(getApiUrl('/api/verify-payment'), {
     method: 'POST',
     headers: { Authorization: authorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -158,7 +160,7 @@ export async function verifyPaymentSignature({ razorpay_order_id, razorpay_payme
  * 5. Submit Investment Enquiry
  */
 export async function submitInvestmentEnquiry(enquiryData, accessToken = null) {
-  const res = await fetch('/api/investment-enquiry', {
+  const res = await fetch(getApiUrl('/api/investment-enquiry'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -177,7 +179,7 @@ export async function submitInvestmentEnquiry(enquiryData, accessToken = null) {
 }
 
 async function adminRequest(path, options = {}) {
-  const response = await fetch(path, {
+  const response = await fetch(getApiUrl(path), {
     ...options,
     credentials: 'same-origin',
     cache: 'no-store',

@@ -1,4 +1,5 @@
 import { authService, supabase, isSupabaseConfigured } from './supabaseClient.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const INVESTMENT_AMOUNT_RANGES = [
   'Below ₹5,000',
@@ -113,7 +114,7 @@ export async function submitInvestmentEnquiry(payload, accessToken = null) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch('/api/investment-enquiry', {
+  const response = await fetch(getApiUrl('/api/investment-enquiry'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -251,7 +252,7 @@ export async function removeInvestmentDocument(path) {
   if (error || !accessToken) {
     throw new Error('Sign in again to remove verification files.');
   }
-  const response = await fetch('/api/student-loan-documents', {
+  const response = await fetch(getApiUrl('/api/student-loan-documents'), {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -301,7 +302,7 @@ export async function updateInvestmentEnquiryStatus({
   status,
   adminNotes = '',
 }) {
-  const response = await fetch('/api/investment-enquiry', {
+  const response = await fetch(getApiUrl('/api/investment-enquiry'), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',

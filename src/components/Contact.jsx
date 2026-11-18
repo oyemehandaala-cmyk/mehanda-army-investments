@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Phone, Mail, MessageCircle, MapPin, Send, CheckCircle2, ShieldCheck, AlertCircle, Copy, ExternalLink } from 'lucide-react';
 import { buildWhatsAppEnquiryUrl } from '../lib/whatsappEnquiry.js';
 import EmailOtpVerification from './EmailOtpVerification.jsx';
+import { getApiUrl } from '../lib/apiConfig.js';
 
 export default function Contact() {
   const [formState, setFormState] = useState({
@@ -68,7 +69,7 @@ export default function Contact() {
     setStatus('loading');
 
     try {
-      const response = await fetch('/api/contact-enquiry', {
+      const response = await fetch(getApiUrl('/api/contact-enquiry'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

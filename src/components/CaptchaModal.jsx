@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ShieldCheck, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import BrandVerificationBadge from './BrandVerificationBadge';
+import { getApiUrl } from '../lib/apiConfig';
 
 // Official Google reCAPTCHA v2 Test Site Key (Always works for development/testing if no key is configured in env)
 const GOOGLE_RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
@@ -38,7 +39,7 @@ export default function CaptchaModal({
     setErrorMessage('');
 
     try {
-      const response = await fetch('/api/verify-captcha', {
+      const response = await fetch(getApiUrl('/api/verify-captcha'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

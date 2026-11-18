@@ -114,6 +114,7 @@ import {
   sendTestAnnouncement,
 } from '../lib/announcementService';
 import BrandVerificationBadge from './BrandVerificationBadge';
+import { getApiUrl } from '../lib/apiConfig';
 
 // ==========================================
 // CONSTANTS & HELPERS
@@ -846,7 +847,7 @@ function ApplicationDetailModal({ app, onClose, onOpenDocModal, onStatusChange, 
   const handleResendNotification = async (notifId = null) => {
     setResendingId(notifId || 'all');
     try {
-      const res = await fetch('/api/admin-notification', {
+      const res = await fetch(getApiUrl('/api/admin-notification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
@@ -3507,7 +3508,7 @@ function AdminPortalInner({ setCurrentView }) {
     if (!nextStatus) return;
     setContactUpdateBusy((prev) => ({ ...prev, [id]: true }));
     try {
-      const res = await fetch('/api/contact-enquiry', {
+      const res = await fetch(getApiUrl('/api/contact-enquiry'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
@@ -3642,7 +3643,7 @@ function AdminPortalInner({ setCurrentView }) {
           adminNotes: 'Approved by administrator for portfolio review.',
         });
       } else {
-        await fetch('/api/contact-enquiry', {
+        await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
@@ -3677,7 +3678,7 @@ function AdminPortalInner({ setCurrentView }) {
           adminNotes: 'Enquiry rejected by administrator.',
         });
       } else {
-        await fetch('/api/contact-enquiry', {
+        await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
@@ -3712,7 +3713,7 @@ function AdminPortalInner({ setCurrentView }) {
           adminNotes: 'Enquiry fulfilled and marked as completed.',
         });
       } else {
-        await fetch('/api/contact-enquiry', {
+        await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
@@ -3754,7 +3755,7 @@ function AdminPortalInner({ setCurrentView }) {
           adminNotes: 'Archived by Administrator.',
         });
       } else {
-        await fetch('/api/contact-enquiry', {
+        await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
@@ -7128,7 +7129,7 @@ function AdminPortalInner({ setCurrentView }) {
             } else if (app.formType === 'contact' || app.id?.startsWith?.('MAI-CON')) {
               const id = app.rawRecord?.id || app.id;
               try {
-                const res = await fetch('/api/contact-enquiry', {
+                const res = await fetch(getApiUrl('/api/contact-enquiry'), {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
                   credentials: 'same-origin',

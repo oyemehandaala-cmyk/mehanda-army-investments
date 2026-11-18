@@ -8,6 +8,7 @@ import {
   QUICK_REPLIES, SUPPORT_KNOWLEDGE_BASE
 } from '../data/supportKnowledgeBase';
 import AiRobotAvatar from './AiRobotAvatar';
+import { getApiUrl } from '../lib/apiConfig';
 
 const WELCOME_MESSAGE = "Welcome to Mehanda Army Investments! 👋 I'm your AI assistant. I can help you understand our company, services, website features, investment plans, or review documents and screenshots. What would you like to know?";
 
@@ -80,7 +81,7 @@ export default function AICustomerSupport({
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/support-chat', { cache: 'no-store' })
+    fetch(getApiUrl('/api/support-chat'), { cache: 'no-store' })
       .then(async (response) => ({
         ok: response.ok,
         result: await response.json().catch(() => null)
@@ -232,7 +233,7 @@ export default function AICustomerSupport({
         .slice(-8)
         .map(({ role, text }) => ({ role, text }));
 
-      const response = await fetch('/api/support-chat', {
+      const response = await fetch(getApiUrl('/api/support-chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: question.slice(0, 1150), history }),

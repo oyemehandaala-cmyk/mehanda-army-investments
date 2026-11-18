@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { authService, isSupabaseConfigured, toAuthenticatedUser } from '../lib/supabaseClient';
 import { getAuthErrorMessage } from '../lib/authError';
+import { getApiUrl } from '../lib/apiConfig';
 import BrandVerificationBadge from './BrandVerificationBadge';
 import PhoneOtpForm from './PhoneOtpForm';
 import ScenicLandscapeBackground from './ScenicLandscapeBackground';
@@ -219,7 +220,7 @@ export default function GoogleSignInWelcomePopup({
 
     setIsSigningIn(true);
     try {
-      const response = await fetch('/api/send-email-otp', {
+      const response = await fetch(getApiUrl('/api/send-email-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -253,7 +254,7 @@ export default function GoogleSignInWelcomePopup({
     setIsSigningIn(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const response = await fetch('/api/send-email-otp', {
+      const response = await fetch(getApiUrl('/api/send-email-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -293,7 +294,7 @@ export default function GoogleSignInWelcomePopup({
     setIsSigningIn(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const response = await fetch('/api/register-user', {
+      const response = await fetch(getApiUrl('/api/register-user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseConfigurationIssue } from './supabaseKey.js';
+import { getApiUrl } from './apiConfig.js';
 
 const DEFAULT_SUPABASE_URL = 'https://epjjsuousttlvlpjtnvs.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwampzdW91c3R0bHZscGp0bnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4OTE5NDAsImV4cCI6MjEwOTQ2Nzk0MH0.AnzmwC6uI2SNNxME07i7FOpMwurS470iK2fHdV5z61Q';
@@ -359,7 +360,7 @@ export const authService = {
     // Verify account existence and dispatch recovery email via reliable server-side delivery
     try {
       if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
-        const resetRes = await fetch('/api/verify-account-exists', {
+        const resetRes = await fetch(getApiUrl('/api/verify-account-exists'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -673,7 +674,7 @@ export const authService = {
     }
 
     try {
-      const response = await fetch('/api/account-deletion', {
+      const response = await fetch(getApiUrl('/api/account-deletion'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -705,7 +706,7 @@ export const authService = {
       return { data: null, error: sessionError || new Error('Please use the verification link sent to your email.') };
     }
     try {
-      const response = await fetch('/api/account-recovery', {
+      const response = await fetch(getApiUrl('/api/account-recovery'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${data.session.access_token}`,
@@ -737,7 +738,7 @@ export const authService = {
     }
 
     try {
-      const response = await fetch('/api/profile-photo', {
+      const response = await fetch(getApiUrl('/api/profile-photo'), {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${data.session.access_token}`,
