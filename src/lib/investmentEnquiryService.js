@@ -305,7 +305,7 @@ export async function updateInvestmentEnquiryStatus({
   const response = await fetch(getApiUrl('/api/investment-enquiry'), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
+    credentials: 'include',
     body: JSON.stringify({
       id,
       status,

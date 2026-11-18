@@ -1,6 +1,8 @@
+import { getApiUrl } from './apiConfig.js';
+
 async function request(url, options = {}) {
-  const res = await fetch(url, {
-    credentials: 'same-origin',
+  const res = await fetch(getApiUrl(url), {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',

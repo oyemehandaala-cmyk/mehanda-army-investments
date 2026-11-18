@@ -680,7 +680,7 @@ function ApplicationDetailModal({ app, onClose, onOpenDocModal, onStatusChange, 
     setNotificationLoading(true);
     try {
       const res = await fetch(`/api/admin-notification?applicationId=${encodeURIComponent(appId)}`, {
-        credentials: 'same-origin',
+        credentials: 'include',
         headers: { 'Accept': 'application/json' },
       });
       if (res.ok) {
@@ -705,7 +705,7 @@ function ApplicationDetailModal({ app, onClose, onOpenDocModal, onStatusChange, 
     const targetUid = raw.user_id || app.userId || raw.userId;
     if (targetUid) {
       fetch(`/api/student-loan-documents?userId=${encodeURIComponent(targetUid)}`, {
-        credentials: 'same-origin',
+        credentials: 'include',
       })
         .then((r) => r.json())
         .then((data) => {
@@ -850,7 +850,7 @@ function ApplicationDetailModal({ app, onClose, onOpenDocModal, onStatusChange, 
       const res = await fetch(getApiUrl('/api/admin-notification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
+        credentials: 'include',
         body: JSON.stringify({
           applicationId: appId,
           notificationId: notifId,
@@ -3511,7 +3511,7 @@ function AdminPortalInner({ setCurrentView }) {
       const res = await fetch(getApiUrl('/api/contact-enquiry'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
+        credentials: 'include',
         body: JSON.stringify({
           id,
           status: nextStatus,
@@ -3646,7 +3646,7 @@ function AdminPortalInner({ setCurrentView }) {
         await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          credentials: 'include',
           body: JSON.stringify({
             id: app.rawRecord?.id || app.id,
             status: 'Under Review',
@@ -3681,7 +3681,7 @@ function AdminPortalInner({ setCurrentView }) {
         await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          credentials: 'include',
           body: JSON.stringify({
             id: app.rawRecord?.id || app.id,
             status: 'Closed',
@@ -3716,7 +3716,7 @@ function AdminPortalInner({ setCurrentView }) {
         await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          credentials: 'include',
           body: JSON.stringify({
             id: app.rawRecord?.id || app.id,
             status: 'Enquiry Completed',
@@ -3758,7 +3758,7 @@ function AdminPortalInner({ setCurrentView }) {
         await fetch(getApiUrl('/api/contact-enquiry'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          credentials: 'include',
           body: JSON.stringify({
             id: app.rawRecord?.id || app.id,
             status: 'Closed',
@@ -7132,7 +7132,7 @@ function AdminPortalInner({ setCurrentView }) {
                 const res = await fetch(getApiUrl('/api/contact-enquiry'), {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
+                  credentials: 'include',
                   body: JSON.stringify({
                     id,
                     status,

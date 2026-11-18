@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   TrendingUp, Phone, Mail, MessageCircle, ShieldCheck, CreditCard,
   ArrowUpRight, ChevronRight, CheckCircle2, Sparkles,
-  ArrowUp, Award, ExternalLink
+  ArrowUp, Award, ExternalLink, Lock
 } from 'lucide-react';
 import BrandVerificationBadge from './BrandVerificationBadge';
 
@@ -350,6 +350,16 @@ export default function Footer({ scrollTo, openLegalModal, setCurrentView }) {
             </span>
             <span className="hidden sm:inline text-slate-700">•</span>
             <span className="text-slate-500">Made with pride in India 🇮🇳</span>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => setCurrentView ? setCurrentView('admin-login') : null}
+              className="inline-flex items-center gap-1 text-[10px] text-slate-600 hover:text-amber-400 transition-colors cursor-pointer"
+              title="Authorized Officer Portal"
+            >
+              <Lock size={10} />
+              <span>Officer Portal</span>
+            </button>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import { authService } from './supabaseClient.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const LOAN_AMOUNTS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 export const MAX_LOAN_AMOUNT = 1000;
@@ -52,9 +53,9 @@ async function request(path, options = {}, requiresCustomerSession = false) {
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(getApiUrl(path), {
     ...options,
-    credentials: 'same-origin',
+    credentials: 'include',
     headers,
     cache: 'no-store',
   });
@@ -162,9 +163,9 @@ export async function getDocumentSignedUrl(path) {
     }
   } catch {}
 
-  const response = await fetch(`/api/student-loan-documents?path=${encodeURIComponent(path)}`, {
+  const response = await fetch(getApiUrl(`/api/student-loan-documents?path=${encodeURIComponent(path)}`), {
     headers,
-    credentials: 'same-origin',
+    credentials: 'include',
     cache: 'no-store',
   });
 

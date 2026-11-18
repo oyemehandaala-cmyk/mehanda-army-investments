@@ -181,7 +181,7 @@ export async function submitInvestmentEnquiry(enquiryData, accessToken = null) {
 async function adminRequest(path, options = {}) {
   const response = await fetch(getApiUrl(path), {
     ...options,
-    credentials: 'same-origin',
+    credentials: 'include',
     cache: 'no-store',
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),

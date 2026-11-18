@@ -32,13 +32,34 @@ export function requiresCustomerSession(view) {
 }
 
 export function getViewFromLocation(location) {
-  const pathname = location.pathname.replace(/\/+$/, '') || '/';
-  if (pathname === '/adminportal' || pathname === '/admin' || pathname === '/admin/login') return 'admin-login';
+  let pathname = (location.pathname || '').replace(/\/+$/, '') || '/';
+  const search = location.search || '';
+  const hash = (location.hash || '').toLowerCase();
+
+  // Support GitHub Pages SPA redirect query: /?/adminportal or /?/loans etc.
+  if (pathname === '/' && search.startsWith('?/')) {
+    const rawPath = search.slice(2).split('&')[0];
+    if (rawPath) {
+      pathname = ('/' + rawPath).replace(/\/+$/, '') || '/';
+    }
+  }
+
+  // Support direct query param or hash: mehandaarmy.net/?admin or mehandaarmy.net/#admin
+  const searchParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  if (
+    pathname === '/adminportal' || pathname === '/admin' || pathname === '/admin/login' ||
+    searchParams.has('admin') || searchParams.has('adminportal') || searchParams.get('portal') === 'admin' ||
+    hash === '#admin' || hash === '#adminportal'
+  ) {
+    return 'admin-login';
+  }
+
+  if (pathname === '/admin/dashboard') return 'admin-dashboard';
   if (pathname === '/privacy' || pathname === '/privacy-policy') return 'privacy-policy';
   if (pathname === '/terms' || pathname === '/terms-and-conditions') return 'terms-and-conditions';
 
   if (pathname === '/') {
-    const authMode = new URLSearchParams(location.search).get('auth');
+    const authMode = searchParams.get('auth');
     if (authMode === 'reset-password') return 'auth-reset-password';
     if (authMode === 'verify-email') return 'auth-verify-email';
   }

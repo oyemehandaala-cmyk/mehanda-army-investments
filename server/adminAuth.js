@@ -116,6 +116,7 @@ export function createAdminSessionCookie(accessToken, expiresAt, headers = {}, n
     Math.floor(expiresAt - now / 1000)
   ));
   const host = (headers['x-forwarded-host'] || headers.host || headers.Host || '').toLowerCase();
+  const origin = (headers.origin || headers.Origin || '').toLowerCase();
   const forwardedProtocol = (headers['x-forwarded-proto'] || headers['X-Forwarded-Proto'] || '')
     .split(',')[0].trim().toLowerCase();
   const isPlainHttpLocal = (host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('10.') || host.includes(':3000')) && forwardedProtocol !== 'https';
@@ -124,11 +125,25 @@ export function createAdminSessionCookie(accessToken, expiresAt, headers = {}, n
     process.env.NODE_ENV === 'production' ||
     process.env.CONTEXT === 'production'
   );
-  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(accessToken)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure ? '; Secure' : ''}`;
+
+  let isCrossOrigin = false;
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host.toLowerCase();
+      const cleanHost = host.split(',')[0].trim().toLowerCase();
+      if (originHost && cleanHost && originHost !== cleanHost) {
+        isCrossOrigin = true;
+      }
+    } catch (_) {}
+  }
+
+  const sameSite = isCrossOrigin && secure ? 'None' : 'Strict';
+  return `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(accessToken)}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${secure ? '; Secure' : ''}`;
 }
 
 export function createExpiredAdminSessionCookie(headers = {}) {
   const host = (headers['x-forwarded-host'] || headers.host || headers.Host || '').toLowerCase();
+  const origin = (headers.origin || headers.Origin || '').toLowerCase();
   const forwardedProtocol = (headers['x-forwarded-proto'] || headers['X-Forwarded-Proto'] || '')
     .split(',')[0].trim().toLowerCase();
   const isPlainHttpLocal = (host.startsWith('localhost') || host.startsWith('127.0.0.1') || host.startsWith('10.') || host.includes(':3000')) && forwardedProtocol !== 'https';
@@ -137,7 +152,20 @@ export function createExpiredAdminSessionCookie(headers = {}) {
     process.env.NODE_ENV === 'production' ||
     process.env.CONTEXT === 'production'
   );
-  return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure ? '; Secure' : ''}`;
+
+  let isCrossOrigin = false;
+  if (origin) {
+    try {
+      const originHost = new URL(origin).host.toLowerCase();
+      const cleanHost = host.split(',')[0].trim().toLowerCase();
+      if (originHost && cleanHost && originHost !== cleanHost) {
+        isCrossOrigin = true;
+      }
+    } catch (_) {}
+  }
+
+  const sameSite = isCrossOrigin && secure ? 'None' : 'Strict';
+  return `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0${secure ? '; Secure' : ''}`;
 }
 
 export async function recordAdminActivity(userId, action, metadata = {}, client) {
@@ -660,6 +688,21 @@ export function assertSameOrigin(headers = {}) {
   const isLocalHost = cleanHost.startsWith('localhost') || cleanHost.startsWith('127.0.0.1');
   if (isLocalOrigin && isLocalHost) return;
   if (originHost.includes('ngrok') && cleanHost.includes('ngrok')) return;
+
+  // Allow Mehanda Army Investments official domains (mehandaarmy.net <-> Vercel backend)
+  const isOfficialOrigin = (
+    originHost === 'mehandaarmy.net' ||
+    originHost === 'www.mehandaarmy.net' ||
+    originHost.endsWith('.vercel.app') ||
+    originHost.endsWith('.github.io')
+  );
+  const isOfficialHost = (
+    cleanHost === 'mehandaarmy.net' ||
+    cleanHost === 'www.mehandaarmy.net' ||
+    cleanHost.endsWith('.vercel.app')
+  );
+  if (isOfficialOrigin && isOfficialHost) return;
+
   throw new AdminAuthError(403, 'This request is not allowed.');
 }
 

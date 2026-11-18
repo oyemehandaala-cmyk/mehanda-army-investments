@@ -1,5 +1,6 @@
 import { authService } from './supabaseClient.js';
 import { getCustomerApplications as getCustomerStudentLoans } from './studentLoanService.js';
+import { getApiUrl } from './apiConfig.js';
 
 export const LOAN_CATEGORIES = {
   student_loan: {
@@ -90,9 +91,9 @@ async function authorizedRequest(path, options = {}) {
     throw new Error('Please sign in again to submit or track loan applications.');
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(getApiUrl(path), {
     ...options,
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
