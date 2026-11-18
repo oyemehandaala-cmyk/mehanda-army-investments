@@ -730,10 +730,10 @@ export const authService = {
   },
 
   async requestProfilePhoto(action) {
-    if (!isSupabaseConfigured()) return { photoUrl: null, error: new Error('Supabase is not configured.') };
+    if (!isSupabaseConfigured()) return { photoUrl: null, error: null };
     const { data, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !data?.session?.access_token) {
-      return { photoUrl: null, error: sessionError || new Error('Please sign in again to manage your profile photo.') };
+      return { photoUrl: null, error: null };
     }
 
     try {
@@ -745,11 +745,18 @@ export const authService = {
         },
         body: JSON.stringify({ action }),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Profile photo request failed.');
-      return { photoUrl: result.photoUrl || null, error: null };
-    } catch (error) {
-      return { photoUrl: null, error };
+      if (!response.ok) {
+        return { photoUrl: null, error: null };
+      }
+      const text = await response.text();
+      try {
+        const result = JSON.parse(text);
+        return { photoUrl: result.photoUrl || null, error: null };
+      } catch {
+        return { photoUrl: null, error: null };
+      }
+    } catch {
+      return { photoUrl: null, error: null };
     }
   },
 

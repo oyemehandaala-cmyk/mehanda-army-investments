@@ -131,11 +131,13 @@ export default function SimpleCustomerDashboard({ user, initialView = 'home', se
         ...loadedProfile,
         avatar_url: photoResult?.photoUrl || loadedProfile.avatar_url || user.avatarUrl || null,
       } : fallbackProfile);
-      setProfileError(loadedProfileError
-        ? `Saved profile details could not be loaded. Showing account information instead. ${loadedProfileError.message}`
-        : photoResult?.error
-          ? `Profile photo could not be loaded. ${photoResult.error.message}`
-          : '');
+      setProfileError(
+        loadedProfileError && !loadedProfileError.message?.includes('<')
+          ? `Saved profile details could not be loaded. Showing account information instead. ${loadedProfileError.message}`
+          : photoResult?.error && !photoResult.error.message?.includes('<')
+            ? `Profile photo could not be loaded. ${photoResult.error.message}`
+            : ''
+      );
       if (!user?.authProviders?.includes('email') || !user?.emailVerifiedAt) {
         setRecoveryStatus('not-applicable');
         setRecoveryError('');
