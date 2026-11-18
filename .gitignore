@@ -25,10 +25,8 @@ dist-ssr
 
 # Environment variables — NEVER commit these. They contain private keys.
 .env
-.env.local
-.env.production
-.env.development
-.env.*.local
+.env.*
+.env.example
 
 # Workstation runtime backups & temporary scratch files
 scratch/
