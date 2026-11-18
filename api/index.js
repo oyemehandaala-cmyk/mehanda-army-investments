@@ -50,16 +50,38 @@ const routes = {
   'webhook': webhook,
 };
 
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== 'https:' && protocol !== 'http:') return false;
+    if (hostname === 'mehandaarmy.net' || hostname === 'www.mehandaarmy.net') return true;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+    if (hostname.endsWith('.vercel.app')) return true;
+    if (hostname.endsWith('.github.io')) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
-  // Enterprise CORS configuration
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Enterprise Hardened CORS Configuration
+  const reqOrigin = req.headers.origin || '';
+  const allowed = isAllowedOrigin(reqOrigin);
+  const safeOrigin = allowed ? reqOrigin : 'https://mehandaarmy.net';
+
+  res.setHeader('Access-Control-Allow-Origin', safeOrigin);
+  if (allowed) {
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
