@@ -3104,16 +3104,11 @@ function AdminPortalInner({ setCurrentView }) {
     }
   };
 
-  // Voice Guidance Helper for Biometric Sensor
-  const speakInstruction = (text) => {
+  // Voice Guidance: Completely disabled for privacy and discretion
+  const speakInstruction = () => {
     try {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'hi-IN';
-        utterance.rate = 0.95;
-        utterance.pitch = 1.0;
-        window.speechSynthesis.speak(utterance);
       }
     } catch (_) {}
   };
@@ -3126,9 +3121,6 @@ function AdminPortalInner({ setCurrentView }) {
     }
     setEnrollmentLoading(true);
     setEnrollmentError('');
-
-    // Voice announcement in Hindi asking to place finger on sensor
-    speakInstruction('कृपया अपने फिंगरप्रिंट सेंसर पर अपनी उंगली रखें');
 
     try {
       const detected = (
@@ -3145,7 +3137,6 @@ function AdminPortalInner({ setCurrentView }) {
       });
 
       if (res?.success) {
-        speakInstruction('फिंगरप्रिंट वेरिफिकेशन सफल हुआ!');
         setEnrollmentSuccess(true);
         setActionToast({
           type: 'success',
@@ -3165,15 +3156,12 @@ function AdminPortalInner({ setCurrentView }) {
           }
         }, 800);
       } else {
-        speakInstruction('फिंगरप्रिंट मैच नहीं हुआ');
         setEnrollmentError(res?.error || 'Biometric passkey enrollment could not be completed.');
       }
     } catch (error) {
       if (error.name === 'NotAllowedError') {
-        speakInstruction('फिंगरप्रिंट मैच नहीं हुआ। कृपया दोबारा सेंसर पर उंगली रखें या इमरजेंसी पिन इस्तेमाल करें।');
         setEnrollmentError('फिंगरप्रिंट मैच नहीं हुआ या सेंसर टाइमआउट हो गया। कृपया दोबारा "Add Fingerprint" दबाकर सेंसर पर उंगली रखें या नीचे Emergency Owner Recovery पिन (556511) का उपयोग करें।');
       } else {
-        speakInstruction('बायोमेट्रिक वेरिफिकेशन नहीं हो सका');
         setEnrollmentError(error.message || 'Biometric registration failed. Please try again.');
       }
     } finally {
@@ -3258,10 +3246,8 @@ function AdminPortalInner({ setCurrentView }) {
   const handlePasskeyLogin = async () => {
     setPasskeyLoading(true);
     setErrorMessage('');
-    speakInstruction('कृपया अपने फिंगरप्रिंट सेंसर पर अपनी उंगली रखें');
     try {
       const result = await authenticateWithPasskey();
-      speakInstruction('फिंगरप्रिंट वेरिफिकेशन सफल हुआ!');
       let session = null;
       try {
         session = await getAdminSession();
@@ -3282,10 +3268,8 @@ function AdminPortalInner({ setCurrentView }) {
       }
     } catch (error) {
       if (error.name === 'NotAllowedError') {
-        speakInstruction('फिंगरप्रिंट मैच नहीं हुआ। कृपया दोबारा सेंसर पर उंगली रखें।');
         setErrorMessage('फिंगरप्रिंट मैच नहीं हुआ या सेंसर टाइमआउट हो गया। कृपया दोबारा कोशिश करें या पासवर्ड से लॉगिन करें।');
       } else {
-        speakInstruction('बायोमेट्रिक वेरिफिकेशन नहीं हो सका');
         setErrorMessage(error.message || 'Biometric authentication failed. Please try with password.');
       }
     } finally {
