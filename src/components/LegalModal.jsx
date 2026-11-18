@@ -11,7 +11,7 @@ export default function LegalModal({ title, isOpen, onClose }) {
         {/* Modal Header */}
         <div className="p-6 bg-[#081525] text-white flex justify-between items-center border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <FileText size={20} className="text-[#FF851B]" />
+            <FileText size={20} className="text-[#876A2E]" />
             <h3 className="text-lg font-bold text-white">{title}</h3>
           </div>
           <button 
@@ -38,6 +38,14 @@ export default function LegalModal({ title, isOpen, onClose }) {
               <p>
                 <strong>4. Security Protocols:</strong> Sensitive records are protected using standard 256-bit encryption and access-controlled databases.
               </p>
+              <div className="pt-2">
+                <a
+                  href="/privacy-policy"
+                  className="text-[#876A2E] hover:underline font-semibold inline-flex items-center gap-1"
+                >
+                  View full public Privacy Policy page &rarr;
+                </a>
+              </div>
             </>
           )}
 
@@ -52,6 +60,17 @@ export default function LegalModal({ title, isOpen, onClose }) {
               <p>
                 <strong>3. Regulatory Compliance:</strong> All investment allocations are executed through authorized, regulated financial institutions in accordance with prevailing Indian laws.
               </p>
+              <p>
+                <strong>4. Digital Loan Facilitator Notice:</strong> Mehanda Army Investments operates strictly as an independent financial consultancy and digital loan facilitation platform (DSA / Lead Referral channel). We are NOT a Bank or NBFC and do not provide direct credit or loans from our own balance sheet. All loans are approved and disbursed exclusively by government &amp; RBI-registered banks and NBFCs.
+              </p>
+              <div className="pt-2">
+                <a
+                  href="/terms-and-conditions"
+                  className="text-[#876A2E] hover:underline font-semibold inline-flex items-center gap-1"
+                >
+                  View full public Terms & Conditions page &rarr;
+                </a>
+              </div>
             </>
           )}
 
@@ -77,7 +96,7 @@ export default function LegalModal({ title, isOpen, onClose }) {
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-1 text-xs text-gray-800">
                 <p><strong>Entity:</strong> Mehanda Army Investments</p>
                 <p><strong>Direct Phone:</strong> +91 9812947813</p>
-                <p><strong>Official Email:</strong> Info@mehandaarmy.in</p>
+                <p><strong>Official Email:</strong> info@mehandaarmy.net</p>
                 <p><strong>Response Turnaround:</strong> Within 48 business hours</p>
               </div>
             </>

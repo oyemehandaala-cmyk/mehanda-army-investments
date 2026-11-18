@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#071426">
+    <title>Mehanda Army Investments | Mobile preview</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --navy: #071426;
+        --navy-soft: #10243b;
+        --gold: #d5ae57;
+        --gold-light: #f6e8c4;
+        --paper: #f5f6f8;
+        --ink: #152235;
+        --muted: #64748b;
+        --border: #e1e5eb;
+        --green: #0a8f70;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: #e9edf2; color: var(--ink); }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      .preview-banner {
+        position: sticky; z-index: 3; top: 0; display: flex; justify-content: center; gap: 8px;
+        padding: 9px 14px; background: #fff3d4; color: #694d13; border-bottom: 1px solid #ebd69e;
+        font-size: 12px; font-weight: 750; text-align: center;
+      }
+      .preview-banner span { font-weight: 500; }
+      .stage { min-height: calc(100vh - 38px); display: grid; place-items: center; padding: 24px; }
+      .phone {
+        width: min(100%, 408px); height: min(850px, calc(100vh - 86px)); min-height: 620px;
+        display: flex; flex-direction: column; overflow: hidden; background: var(--paper);
+        border: 1px solid #d6dbe2; border-radius: 30px; box-shadow: 0 24px 70px #0714262b;
+      }
+      .app-header {
+        min-height: 76px; display: flex; align-items: center; gap: 12px; padding: 12px 17px;
+        color: #fff; background: var(--navy);
+      }
+      .brand-mark {
+        width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center;
+        color: var(--gold); background: #12243a; border: 1px solid #334156; border-radius: 13px;
+      }
+      .brand-mark svg { width: 23px; height: 23px; }
+      .header-copy { min-width: 0; flex: 1; }
+      .header-title { margin: 0; font-size: 16px; font-weight: 800; }
+      .header-subtitle { margin: 4px 0 0; color: #a8b4c4; font-size: 10px; letter-spacing: .2px; }
+      .icon-button {
+        width: 40px; height: 40px; display: grid; place-items: center; position: relative; flex: 0 0 40px;
+        color: var(--gold); background: #142640; border: 0; border-radius: 13px;
+      }
+      .icon-button svg { width: 20px; height: 20px; }
+      .app-content { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 18px 17px 24px; }
+      .app-content::-webkit-scrollbar { width: 5px; }
+      .app-content::-webkit-scrollbar-thumb { background: #c5ccd5; border-radius: 5px; }
+      .bottom-nav {
+        min-height: 67px; display: grid; grid-template-columns: repeat(4, 1fr);
+        padding: 7px 7px max(7px, env(safe-area-inset-bottom)); background: #fff;
+        border-top: 1px solid var(--border);
+      }
+      .tab {
+        display: grid; justify-items: center; align-content: center; gap: 4px; padding: 3px;
+        color: #9aa6b5; border: 0; background: transparent; font-size: 10px; font-weight: 600;
+      }
+      .tab svg { width: 20px; height: 20px; }
+      .tab.active { color: var(--gold); }
+      .eyebrow { color: #bd9140; font-size: 9px; font-weight: 800; letter-spacing: 1.25px; }
+      .hero {
+        position: relative; overflow: hidden; padding: 21px; margin-bottom: 20px;
+        color: #fff; background: var(--navy); border-radius: 24px;
+      }
+      .hero::after {
+        content: ""; position: absolute; width: 165px; height: 165px; right: -65px; bottom: -96px;
+        border: 1px solid #ffffff17; border-radius: 50%; box-shadow: 0 0 0 22px #ffffff08, 0 0 0 45px #ffffff05;
+      }
+      .hero-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+      .hero-symbol {
+        width: 39px; height: 39px; display: grid; place-items: center; color: var(--gold);
+        background: #182a41; border: 1px solid #38465a; border-radius: 13px;
+      }
+      .hero-symbol svg { width: 21px; }
+      .hero h2 { margin: 20px 0 9px; max-width: 295px; font-size: 26px; line-height: 1.22; letter-spacing: -.5px; }
+      .hero p { margin: 0; max-width: 300px; color: #c0cad6; font-size: 12px; line-height: 1.65; }
+      .button {
+        min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        padding: 0 16px; color: var(--navy); background: var(--gold); border: 1px solid var(--gold);
+        border-radius: 13px; font-size: 12px; font-weight: 800; transition: transform .15s, opacity .15s;
+      }
+      .button:hover { transform: translateY(-1px); }
+      .button.secondary { color: var(--navy); background: #fff; border-color: var(--border); }
+      .button.full { width: 100%; }
+      .hero .button { margin-top: 18px; }
+      .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin: 22px 1px 11px; }
+      .section-heading h2 { margin: 0; font-size: 16px; font-weight: 800; }
+      .text-button { padding: 4px 0; color: #8a6726; background: transparent; border: 0; font-size: 11px; font-weight: 750; }
+      .card {
+        padding: 16px; margin-bottom: 12px; background: #fff; border: 1px solid var(--border);
+        border-radius: 18px; box-shadow: 0 4px 14px #07142608;
+      }
+      .card-title { margin: 0 0 7px; color: var(--ink); font-size: 14px; font-weight: 800; line-height: 1.4; }
+      .body-copy { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+      .service-row { display: flex; align-items: flex-start; gap: 12px; }
+      .service-icon, .round-icon {
+        width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 40px;
+        color: #a77a24; background: #fbf5e8; border-radius: 13px;
+      }
+      .service-icon svg, .round-icon svg { width: 19px; height: 19px; }
+      .service-row .card-title { margin: 1px 0 4px; }
+      .service-row .body-copy { font-size: 11px; }
+      .risk-note { display: flex; align-items: flex-start; gap: 9px; padding: 12px; margin: 15px 0 0; color: #6b5a35; background: #fff8e9; border: 1px solid #efe1bd; border-radius: 14px; font-size: 10px; line-height: 1.6; }
+      .risk-note svg { flex: 0 0 17px; width: 17px; color: #af8433; }
+      .preview-label {
+        width: fit-content; display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px;
+        color: #795b1e; background: #fff3d4; border: 1px solid #f0dfb8; border-radius: 999px;
+        font-size: 9px; font-weight: 800; letter-spacing: .15px;
+      }
+      .preview-label::before { content: ""; width: 6px; height: 6px; background: #d5ae57; border-radius: 50%; }
+      .account-hero { text-align: center; padding: 21px; }
+      .avatar {
+        width: 68px; height: 68px; display: grid; place-items: center; margin: 0 auto 11px;
+        color: var(--gold); background: var(--navy-soft); border: 3px solid #f3e7c9; border-radius: 50%;
+        font-size: 22px; font-weight: 800;
+      }
+      .profile-name { margin: 0 0 3px; font-size: 17px; font-weight: 800; }
+      .profile-email { margin: 0 0 10px; color: var(--muted); font-size: 11px; }
+      .verified { display: inline-flex; gap: 5px; align-items: center; color: var(--green); font-size: 10px; font-weight: 750; }
+      .detail-row, .setting-row, .menu-row { display: flex; align-items: center; gap: 12px; min-height: 51px; }
+      .detail-row + .detail-row, .setting-row + .setting-row { border-top: 1px solid #eef0f3; }
+      .detail-copy { min-width: 0; flex: 1; }
+      .detail-label { color: var(--muted); font-size: 10px; }
+      .detail-value { margin-top: 4px; overflow-wrap: anywhere; font-size: 12px; font-weight: 700; }
+      .setting-row { width: 100%; padding: 8px 0; text-align: left; color: var(--ink); background: transparent; border: 0; }
+      .setting-row .detail-copy { font-size: 12px; font-weight: 700; }
+      .chevron { color: #8b95a3; margin-left: auto; font-size: 20px; }
+      .screen-title { margin: 4px 1px 5px; font-size: 21px; font-weight: 850; letter-spacing: -.4px; }
+      .screen-intro { margin: 0 1px 17px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+      .auth-card { padding: 19px; }
+      .auth-brand { display: flex; justify-content: center; margin-bottom: 13px; }
+      .auth-card h2 { margin: 0 0 7px; text-align: center; font-size: 20px; }
+      .auth-card > .body-copy { margin-bottom: 16px; text-align: center; }
+      .field { margin: 12px 0; }
+      .field label { display: block; margin-bottom: 6px; color: #34445a; font-size: 11px; font-weight: 750; }
+      .field input {
+        width: 100%; height: 43px; padding: 0 12px; color: var(--ink); background: #fff;
+        border: 1px solid var(--border); border-radius: 11px; outline: none; font-size: 12px;
+      }
+      .field input:focus { border-color: #b99248; box-shadow: 0 0 0 3px #d5ae5726; }
+      .auth-links { display: grid; justify-items: center; gap: 13px; margin: 15px 0; }
+      .auth-links button { color: #8a6726; background: transparent; border: 0; font-size: 11px; font-weight: 700; }
+      .auth-footnote { margin: 13px 0 0; text-align: center; color: var(--muted); font-size: 10px; line-height: 1.6; }
+      .inline-notice { padding: 10px 11px; margin: 12px 0; color: #53677f; background: #f2f6fa; border-radius: 12px; font-size: 10px; line-height: 1.55; }
+      .chat-status { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; font-size: 12px; font-weight: 800; }
+      .status-dot { width: 8px; height: 8px; background: #d5ae57; border-radius: 50%; }
+      .chat-log { display: flex; flex-direction: column; gap: 10px; min-height: 210px; padding: 5px 1px 12px; }
+      .bubble { max-width: 87%; padding: 11px 12px; border-radius: 15px; font-size: 11px; line-height: 1.6; }
+      .bubble.bot { align-self: flex-start; color: #34445a; background: #fff; border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+      .bubble.user { align-self: flex-end; color: #fff; background: var(--navy-soft); border-bottom-right-radius: 5px; }
+      .composer { display: flex; align-items: center; gap: 8px; padding: 7px; background: #fff; border: 1px solid var(--border); border-radius: 14px; }
+      .composer input { flex: 1; min-width: 0; padding: 8px 5px; border: 0; outline: 0; font-size: 11px; }
+      .send-button { width: 36px; height: 36px; display: grid; place-items: center; color: var(--navy); background: var(--gold); border: 0; border-radius: 11px; }
+      .send-button svg { width: 17px; height: 17px; }
+      .notice-card { display: flex; align-items: flex-start; gap: 12px; }
+      .notice-card .body-copy { margin-top: 5px; }
+      .coming-soon { display: inline-block; padding: 4px 7px; margin-top: 9px; color: #765d2b; background: #fbf3df; border-radius: 7px; font-size: 9px; font-weight: 800; }
+      .toast { position: absolute; z-index: 4; left: 50%; bottom: 84px; width: max-content; max-width: calc(100% - 38px); padding: 10px 13px; color: #fff; background: var(--navy-soft); border-radius: 12px; box-shadow: 0 8px 26px #07142630; font-size: 11px; transform: translateX(-50%); }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+      @media (max-width: 560px) {
+        body { background: var(--paper); }
+        .preview-banner { position: relative; font-size: 10px; flex-wrap: wrap; }
+        .stage { min-height: calc(100dvh - 40px); padding: 0; }
+        .phone { width: 100%; height: calc(100dvh - 40px); min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+      }
+      @media (max-height: 700px) and (min-width: 561px) {
+        .stage { padding: 10px; }
+        .phone { height: calc(100vh - 58px); min-height: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-banner" role="note">PREVIEW MODE · SAMPLE DATA ONLY <span>No sign-in, customer records, or backend connections.</span></div>
+    <main class="stage">
+      <section class="phone" aria-label="Mehanda Army Investments mobile app preview">
+        <header class="app-header">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg>
+          </div>
+          <div class="header-copy"><h1 id="header-title" class="header-title">Welcome</h1><p id="header-subtitle" class="header-subtitle">Disciplined wealth management</p></div>
+          <button class="icon-button" type="button" data-screen="notifications" aria-label="Open announcements">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          </button>
+          <button class="icon-button" type="button" data-screen="settings" aria-label="Open settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.8Z"/></svg>
+          </button>
+        </header>
+        <div id="app-content" class="app-content" tabindex="0"></div>
+        <nav class="bottom-nav" aria-label="Main navigation">
+          <button class="tab active" type="button" data-screen="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-7h6v7"/></svg><span>Home</span></button>
+          <button class="tab" type="button" data-screen="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18m-11 0v2h4v-2"/></svg><span>Services</span></button>
+          <button class="tab" type="button" data-screen="assistant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg><span>AI support</span></button>
+          <button class="tab" type="button" data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></button>
+        </nav>
+        <div id="toast" class="toast" role="status" hidden></div>
+      </section>
+    </main>
+    <script>
+      const screenTitles = {
+        home: ['Welcome', 'Disciplined wealth management'],
+        services: ['Our services', 'Mehanda Army Investments'],
+        assistant: ['AI assistant', 'General company information'],
+        profile: ['Your account', 'Preview profile · not signed in'],
+        login: ['Secure account', 'Preview-only sign in'],
+        signup: ['Secure account', 'Preview-only registration'],
+        notifications: ['Announcements', 'Company information'],
+        settings: ['Settings', 'App preferences and support'],
+      };
+      const icons = {
+        portfolio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg>',
+        shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/></svg>',
+        arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>',
+        mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+        file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8m-8 4h8"/></svg>',
+        help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01"/></svg>',
+        bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>',
+        gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.5.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.5-.9l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-1.8l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.5-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.5.9l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 1.8Z"/></svg>',
+        user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>',
+      };
+      const serviceData = [
+        ['Portfolio Planning & Multi-Asset Allocation', 'Diversification across equities, high-grade debt, gold hedges, and liquid reserves for a stated time horizon.', 'Asset architecture'],
+        ['Retirement & Generational Wealth Blueprinting', 'Long-term planning for cash-flow needs, pension security, and wealth preservation.', 'Long-term planning'],
+        ['Capital Preservation & Downside Risk Hedging', 'Risk-aware allocation planning described to mitigate drawdowns. Capital protection is not guaranteed.', 'Risk planning'],
+      ];
+      let activeScreen = 'home';
+      let toastTimer;
+      const content = document.getElementById('app-content');
+      const toastElement = document.getElementById('toast');
+      const heading = document.getElementById('header-title');
+      const subtitle = document.getElementById('header-subtitle');
+      const serviceCards = () => serviceData.map(([title, description, tag]) => `
+        <article class="card"><div class="service-row"><div class="service-icon">${icons.portfolio}</div><div><span class="eyebrow">${tag}</span><h2 class="card-title">${title}</h2><p class="body-copy">${description}</p></div></div></article>`).join('');
+      const riskNote = '<div class="risk-note">' + icons.shield + '<span>Investments are subject to market risk. Returns are not guaranteed. This app does not accept investment deposits.</span></div>';
+      const button = (label, screen, secondary = false) => `<button class="button full${secondary ? ' secondary' : ''}" type="button" data-screen="${screen}">${label} ${icons.arrow}</button>`;
+
+      function showToast(message) {
+        toastElement.textContent = message;
+        toastElement.hidden = false;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toastElement.hidden = true; }, 2600);
+      }
+
+      function renderHome() {
+        return `<section class="hero"><div class="hero-top"><span class="eyebrow">MEHANDA ARMY INVESTMENTS</span><span class="hero-symbol">${icons.portfolio}</span></div><h2>Plan with clarity. Invest with confidence.</h2><p>Explore published services and learn more about disciplined wealth planning.</p>${button('Explore our services', 'services')}</section>
+          <div class="section-heading"><h2>Our services</h2><button class="text-button" type="button" data-screen="services">View all</button></div>
+          ${serviceCards()}
+          <article class="card notice-card"><div class="round-icon">${icons.bell}</div><div><h2 class="card-title">Student Small Loan</h2><p class="body-copy">An upcoming service announcement from the company.</p><span class="coming-soon">COMING SOON</span></div></article>
+          ${riskNote}`;
+      }
+
+      function renderServices() {
+        return `<h2 class="screen-title">Services designed around your goals</h2><p class="screen-intro">Explore the company's published planning services. Availability and details should be confirmed with official support.</p>
+          ${serviceCards()}<article class="card"><h2 class="card-title">Speak with our team</h2><p class="body-copy">Contact the company to discuss published service information.</p><button class="button full" style="margin-top:13px" type="button" data-toast="In this preview, contact actions are not connected.">Contact support ${icons.arrow}</button></article>${riskNote}`;
+      }
+
+      function renderProfile() {
+        return `<article class="card account-hero"><span class="preview-label">PREVIEW ONLY · NO ACCOUNT</span><div class="avatar" style="margin-top:13px">${icons.user}</div><h2 class="profile-name">Profile</h2><p class="profile-email">Sign in to view account details.</p></article>
+          <article class="card"><div class="section-heading" style="margin:0 0 6px"><h2>Personal details</h2><span class="preview-label">PREVIEW</span></div><p class="body-copy">No account is signed in, so personal information and verification statuses are not displayed.</p></article>
+          <article class="card"><button class="setting-row" type="button" data-toast="No customer transaction records are displayed in this preview."><span class="service-icon">${icons.file}</span><span class="detail-copy">Transaction history</span><span class="chevron">›</span></button><button class="setting-row" type="button" data-screen="settings"><span class="service-icon">${icons.gear}</span><span class="detail-copy">Account settings</span><span class="chevron">›</span></button></article>
+          <button class="button secondary full" type="button" data-screen="login">Sign out of preview</button>
+          <div class="inline-notice">This is a non-authenticated preview. No customer records are loaded, saved, or changed.</div>`;
+      }
+
+      function renderAuth(mode) {
+        const signup = mode === 'signup';
+        return `<article class="card auth-card"><div class="auth-brand"><div class="brand-mark">${icons.portfolio}</div></div><span class="preview-label" style="display:flex;margin:0 auto 12px">PREVIEW MODE · NO AUTHENTICATION</span><h2>${signup ? 'Create your account' : 'Welcome back'}</h2><p class="body-copy">${signup ? 'Preview the registration design. This form will not create an account.' : 'Preview the sign-in design. This form is not connected to an account service.'}</p>
+          ${signup ? '<div class="field"><label for="auth-name">Full name</label><input id="auth-name" autocomplete="name"></div>' : ''}
+          <div class="field"><label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email"></div>
+          <div class="field"><label for="auth-password">Password</label><input id="auth-password" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}"></div>
+          <button class="button full" type="button" data-toast="Preview only — no credentials were sent or saved.">${signup ? 'Create account' : 'Sign in securely'} ${icons.shield}</button>
+          <div class="auth-links">${signup ? '<button type="button" data-screen="login">Already registered? Sign in</button>' : '<button type="button" data-toast="Password recovery is not active in preview mode.">Forgot password?</button><button type="button" data-screen="signup">New here? Create an account</button>'}</div>
+          <p class="auth-footnote">For safety, do not enter a real password. This preview has no backend and never submits form data.</p></article>`;
+      }
+
+      function renderAssistant() {
+        return `<div class="card"><div class="chat-status"><span class="status-dot"></span> Preview assistant · simulated</div><p class="body-copy">The real app uses the company's secure support service. This preview gives sample responses only and cannot see account details.</p></div>
+          <div id="chat-log" class="chat-log" aria-live="polite"><div class="bubble bot">Hello! I can help with general questions about published company services. This is a sample preview response, not the live AI service.</div></div>
+          <form id="chat-form" class="composer"><label class="visually-hidden" for="chat-input">Ask a general question</label><input id="chat-input" autocomplete="off" placeholder="Ask a general question…"><button class="send-button" type="submit" aria-label="Send question">${icons.arrow}</button></form>
+          <p class="auth-footnote">Preview responses are scripted examples. Do not send sensitive information.</p>`;
+      }
+
+      function renderNotifications() {
+        return `<h2 class="screen-title">Announcements</h2><p class="screen-intro">Company updates visible in this preview.</p>
+          <article class="card notice-card"><div class="round-icon">${icons.bell}</div><div><span class="eyebrow">COMPANY INFORMATION</span><h2 class="card-title" style="margin-top:5px">Student Small Loan — Coming Soon</h2><p class="body-copy">This service has been announced as coming soon. No applications or loan requests are accepted in this preview.</p><span class="coming-soon">COMING SOON</span></div></article>
+          <article class="card"><span class="preview-label">PREVIEW SCREEN</span><h2 class="card-title" style="margin-top:10px">No other announcements</h2><p class="body-copy">The app does not claim to provide a live push notification feed.</p></article>${riskNote}`;
+      }
+
+      function renderSettings() {
+        return `<h2 class="screen-title">Settings</h2><p class="screen-intro">Explore account and app links in the mobile preview.</p>
+          <article class="card"><div class="section-heading" style="margin:0 0 5px"><h2>Account</h2><span class="preview-label">PREVIEW</span></div><button class="setting-row" type="button" data-screen="profile"><span class="service-icon">${icons.user}</span><span class="detail-copy">Profile</span><span class="chevron">›</span></button><button class="setting-row" type="button" data-screen="login"><span class="service-icon">${icons.shield}</span><span class="detail-copy">Sign in or create account</span><span class="chevron">›</span></button></article>
+          <article class="card"><div class="section-heading" style="margin:0 0 5px"><h2>Information & support</h2></div><button class="setting-row" type="button" data-screen="notifications"><span class="service-icon">${icons.bell}</span><span class="detail-copy">Announcements</span><span class="chevron">›</span></button><button class="setting-row" type="button" data-screen="services"><span class="service-icon">${icons.file}</span><span class="detail-copy">Services</span><span class="chevron">›</span></button><button class="setting-row" type="button" data-screen="assistant"><span class="service-icon">${icons.help}</span><span class="detail-copy">AI support</span><span class="chevron">›</span></button><button class="setting-row" type="button" data-toast="Preview only — support contact is not connected."><span class="service-icon">${icons.mail}</span><span class="detail-copy">Contact support</span><span class="chevron">›</span></button></article>
+          <div class="inline-notice">Preview mode uses fictional sample data only. No account preferences or customer information are sent to a service.</div>`;
+      }
+
+      function render(screen) {
+        activeScreen = screen;
+        const [title, description] = screenTitles[screen] || screenTitles.home;
+        heading.textContent = title;
+        subtitle.textContent = description;
+        content.innerHTML = ({
+          home: renderHome,
+          services: renderServices,
+          profile: renderProfile,
+          login: () => renderAuth('login'),
+          signup: () => renderAuth('signup'),
+          assistant: renderAssistant,
+          notifications: renderNotifications,
+          settings: renderSettings,
+        })[screen]();
+        content.scrollTop = 0;
+        document.querySelectorAll('.tab').forEach((tab) => {
+          const selected = tab.dataset.screen === screen;
+          tab.classList.toggle('active', selected);
+          if (selected) tab.setAttribute('aria-current', 'page');
+          else tab.removeAttribute('aria-current');
+        });
+      }
+
+      document.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-screen], [data-toast]');
+        if (!target) return;
+        if (target.dataset.screen) render(target.dataset.screen);
+        if (target.dataset.toast) showToast(target.dataset.toast);
+      });
+      document.addEventListener('submit', (event) => {
+        if (event.target.id !== 'chat-form') return;
+        event.preventDefault();
+        const input = document.getElementById('chat-input');
+        const question = input.value.trim();
+        if (!question) return;
+        const log = document.getElementById('chat-log');
+        const userBubble = document.createElement('div');
+        userBubble.className = 'bubble user';
+        userBubble.textContent = question;
+        const reply = document.createElement('div');
+        reply.className = 'bubble bot';
+        reply.textContent = 'This preview uses sample responses only. For accurate company information, please contact official support or review the Services screen.';
+        log.append(userBubble, reply);
+        input.value = '';
+        content.scrollTop = content.scrollHeight;
+      });
+      render('home');
+    </script>
+  </body>
+</html>

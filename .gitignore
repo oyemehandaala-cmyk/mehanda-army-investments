@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables — NEVER commit these. They contain private keys.
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+
+# Workstation runtime backups & temporary scratch files
+scratch/
+*.zip
+*.bak
+.aider-desk/
+
+/generated/prisma

@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Mehanda Army Investments",
+    "slug": "mehanda-army-investments",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mehandaarmyinvestments",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.mehndaarmy.investments"
+    },
+    "android": {
+      "package": "in.mehndaarmy.investments",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#071426",
+        "foregroundImage": "./assets/icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Mehanda Army Investments to select a profile picture."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#071426"
+        }
+      ],
+      "expo-web-browser"
+    ]
+  }
+}

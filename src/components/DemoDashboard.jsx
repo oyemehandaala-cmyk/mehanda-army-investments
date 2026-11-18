@@ -14,6 +14,7 @@ import {
   SlidersHorizontal 
 } from 'lucide-react';
 import { INITIAL_DEMO_PORTFOLIO } from '../data/demoPortfolio';
+import LiveDateTime from './LiveDateTime';
 
 export default function DemoDashboard({ setCurrentView }) {
   const [portfolioData, setPortfolioData] = useState(INITIAL_DEMO_PORTFOLIO);
@@ -48,8 +49,8 @@ export default function DemoDashboard({ setCurrentView }) {
 
       {/* Demo Dashboard Top Bar */}
       <header className="bg-[#10243B] border-b border-white/10 px-4 sm:px-8 py-4 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-tr from-[#FF851B] to-amber-500 rounded-xl flex items-center justify-center shadow-md">
+        <div className="order-1 flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-tr from-[#876A2E] to-[#876A2E] rounded-xl flex items-center justify-center shadow-md">
             <TrendingUp size={22} className="text-white" />
           </div>
           <div>
@@ -63,7 +64,9 @@ export default function DemoDashboard({ setCurrentView }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <LiveDateTime className="order-2 w-full sm:w-auto" />
+
+        <div className="order-3 flex items-center gap-3">
           <button 
             onClick={handleResetDemo}
             className="px-3.5 py-2 text-xs font-bold rounded-lg border border-white/20 text-gray-200 hover:bg-white/10 transition-colors flex items-center gap-1.5"
@@ -74,7 +77,7 @@ export default function DemoDashboard({ setCurrentView }) {
 
           <button 
             onClick={() => setCurrentView('home')}
-            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#FF851B] hover:bg-orange-600 text-white transition-colors flex items-center gap-1.5 shadow-sm"
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#876A2E] hover:bg-[#725522] text-white transition-colors flex items-center gap-1.5 shadow-sm"
           >
             <ArrowLeft size={14} /> Exit Demo & Return Home
           </button>
@@ -87,7 +90,7 @@ export default function DemoDashboard({ setCurrentView }) {
         {/* Welcome & Strategy Profile Card */}
         <div className="bg-[#10243B] p-6 rounded-3xl border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
           <div>
-            <span className="text-[#00C995] text-xs font-bold uppercase tracking-wider block mb-1">
+            <span className="text-[#50745A] text-xs font-bold uppercase tracking-wider block mb-1">
               Sample Model Portfolio
             </span>
             <h1 className="text-2xl font-black text-white">{portfolioData.accountName}</h1>
@@ -97,7 +100,7 @@ export default function DemoDashboard({ setCurrentView }) {
           </div>
 
           <div className="flex items-center gap-2 bg-[#081525] px-4 py-2.5 rounded-xl border border-white/10">
-            <ShieldCheck size={20} className="text-[#00C995]" />
+            <ShieldCheck size={20} className="text-[#50745A]" />
             <div className="text-left">
               <span className="text-[10px] text-gray-400 uppercase tracking-wider block">Risk Tolerance</span>
               <span className="text-xs font-bold text-white">{portfolioData.riskCategory}</span>
@@ -112,7 +115,7 @@ export default function DemoDashboard({ setCurrentView }) {
             <h3 className="text-2xl font-black text-white mt-1">
               {formatINR(portfolioData.totalValue)}
             </h3>
-            <span className="text-xs text-[#00C995] font-bold mt-1 inline-block">
+            <span className="text-xs text-[#50745A] font-bold mt-1 inline-block">
               +{portfolioData.unrealizedReturnPercentage}% (Illustrative)
             </span>
           </div>
@@ -127,7 +130,7 @@ export default function DemoDashboard({ setCurrentView }) {
 
           <div className="bg-[#10243B] p-5 rounded-2xl border border-white/10">
             <span className="text-xs text-gray-400 font-medium">Illustrative Compound Gain</span>
-            <h3 className="text-2xl font-black text-[#00C995] mt-1">
+            <h3 className="text-2xl font-black text-[#50745A] mt-1">
               +{formatINR(portfolioData.totalValue - portfolioData.initialCapital)}
             </h3>
             <span className="text-xs text-gray-400 mt-1 inline-block">Sample Simulation</span>
@@ -135,7 +138,7 @@ export default function DemoDashboard({ setCurrentView }) {
 
           <div className="bg-[#10243B] p-5 rounded-2xl border border-white/10">
             <span className="text-xs text-gray-400 font-medium">Monthly Disciplined SIP</span>
-            <h3 className="text-2xl font-black text-[#FF851B] mt-1">
+            <h3 className="text-2xl font-black text-[#876A2E] mt-1">
               {formatINR(portfolioData.monthlySipAmount)}
             </h3>
             <span className="text-xs text-gray-400 mt-1 inline-block">Auto-allocation model</span>
@@ -149,7 +152,7 @@ export default function DemoDashboard({ setCurrentView }) {
           <div className="lg:col-span-7 bg-[#10243B] p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl">
             <div className="flex justify-between items-center mb-6 pb-3 border-b border-white/10">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <PieChart size={18} className="text-[#FF851B]" />
+                <PieChart size={18} className="text-[#876A2E]" />
                 Simulated Asset Allocation
               </h3>
               <span className="text-xs text-gray-400">Multi-Asset Blueprint</span>
@@ -186,7 +189,7 @@ export default function DemoDashboard({ setCurrentView }) {
           <div className="lg:col-span-5 bg-[#10243B] p-6 sm:p-7 rounded-3xl border border-white/10 shadow-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/10">
-                <SlidersHorizontal size={18} className="text-[#00C995]" />
+                <SlidersHorizontal size={18} className="text-[#50745A]" />
                 <h3 className="text-base font-bold text-white">Interactive Returns Simulator</h3>
               </div>
 
@@ -203,7 +206,7 @@ export default function DemoDashboard({ setCurrentView }) {
                     step="1"
                     value={demoDuration}
                     onChange={(e) => setDemoDuration(Number(e.target.value))}
-                    className="w-full accent-[#00C995] h-2 bg-slate-800 rounded-lg cursor-pointer"
+                    className="w-full accent-[#50745A] h-2 bg-slate-800 rounded-lg cursor-pointer"
                   />
                 </div>
 
@@ -229,10 +232,10 @@ export default function DemoDashboard({ setCurrentView }) {
                 <span className="text-[11px] text-gray-400 block uppercase tracking-wider font-semibold">
                   Projected Portfolio Value in {demoDuration} Years:
                 </span>
-                <span className="text-2xl font-black text-[#FF851B] font-mono mt-1 block">
+                <span className="text-2xl font-black text-[#876A2E] font-mono mt-1 block">
                   {formatINR(demoCompoundedValue)}
                 </span>
-                <span className="text-[11px] text-[#00C995] mt-1 block">
+                <span className="text-[11px] text-[#50745A] mt-1 block">
                   +{formatINR(demoCompoundedValue - portfolioData.totalValue)} (Mathematical Growth)
                 </span>
               </div>
@@ -270,7 +273,7 @@ export default function DemoDashboard({ setCurrentView }) {
                         {holding.category}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#FF851B]">{holding.allocation}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-[#876A2E]">{holding.allocation}</td>
                     <td className="py-3 px-4 text-gray-300 font-mono text-[11px]">{holding.trend}</td>
                   </tr>
                 ))}
@@ -302,9 +305,9 @@ export default function DemoDashboard({ setCurrentView }) {
                     <td className="py-3 px-4 font-mono text-gray-400">{tx.id}</td>
                     <td className="py-3 px-4">{tx.date}</td>
                     <td className="py-3 px-4 font-medium text-white">{tx.description}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#00C995]">{tx.amount}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-[#50745A]">{tx.amount}</td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 bg-emerald-500/15 text-[#00C995] rounded text-[10px] font-bold">
+                      <span className="px-2 py-0.5 bg-emerald-500/15 text-[#50745A] rounded text-[10px] font-bold">
                         {tx.status}
                       </span>
                     </td>
@@ -326,7 +329,7 @@ export default function DemoDashboard({ setCurrentView }) {
           <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
             <button 
               onClick={() => setCurrentView('auth-signup')}
-              className="px-6 py-3 bg-[#FF851B] hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md"
+              className="px-6 py-3 bg-[#876A2E] hover:bg-[#725522] text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md"
             >
               Create Real Client Account
             </button>

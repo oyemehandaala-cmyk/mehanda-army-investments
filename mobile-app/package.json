@@ -1,0 +1,38 @@
+{
+  "name": "mehanda-army-investments-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "doctor": "npx expo-doctor@latest",
+    "lint": "eslint App.tsx src index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "base64-arraybuffer": "1.0.2",
+    "expo": "~58.0.21",
+    "expo-image-picker": "~58.0.10",
+    "expo-linking": "~58.0.15",
+    "expo-secure-store": "~58.0.2",
+    "expo-splash-screen": "~58.0.12",
+    "expo-status-bar": "~58.0.4",
+    "expo-web-browser": "~58.0.7",
+    "lucide-react-native": "1.64.0",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-svg": "15.16.0",
+    "react-native-url-polyfill": "2.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
+    "typescript": "~6.0.3"
+  },
+  "private": true
+}

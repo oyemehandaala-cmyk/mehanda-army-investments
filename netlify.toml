@@ -1,8 +1,156 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/verify-captcha"
+  to = "/.netlify/functions/verify-captcha"
+  status = 200
+
+[[redirects]]
+  from = "/api/contact-enquiry"
+  to = "/.netlify/functions/contact-enquiry"
+  status = 200
+
+[[redirects]]
+  from = "/api/support-chat"
+  to = "/.netlify/functions/support-chat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/student-loans"
+  to = "/.netlify/functions/student-loans"
+  status = 200
+
+[[redirects]]
+  from = "/api/farm-loans"
+  to = "/.netlify/functions/farm-loans"
+  status = 200
+
+[[redirects]]
+  from = "/api/student-loan-documents"
+  to = "/.netlify/functions/student-loan-documents"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile-photo"
+  to = "/.netlify/functions/profile-photo"
+  status = 200
+
+[[redirects]]
+  from = "/api/account-deletion"
+  to = "/.netlify/functions/account-deletion"
+  status = 200
+
+[[redirects]]
+  from = "/api/account-recovery"
+  to = "/.netlify/functions/account-recovery"
+  status = 200
+
+[[redirects]]
+  from = "/api/create-order"
+  to = "/.netlify/functions/create-order"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify-payment"
+  to = "/.netlify/functions/verify-payment"
+  status = 200
+
+[[redirects]]
+  from = "/api/webhook"
+  to = "/.netlify/functions/webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/investment-enquiry"
+  to = "/.netlify/functions/investment-enquiry"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-auth"
+  to = "/.netlify/functions/admin-auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-passkey"
+  to = "/.netlify/functions/admin-passkey"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-security"
+  to = "/.netlify/functions/admin-security"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin"
+  to = "/.netlify/functions/admin"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-notification"
+  to = "/.netlify/functions/admin-notification"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin-announcements"
+  to = "/.netlify/functions/admin-announcements"
+  status = 200
+
+[[redirects]]
+  from = "/api/unsubscribe"
+  to = "/.netlify/functions/unsubscribe"
+  status = 200
+
+[[redirects]]
+  from = "/api/send-email-otp"
+  to = "/.netlify/functions/send-email-otp"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify-email-otp"
+  to = "/.netlify/functions/verify-email-otp"
+  status = 200
+
+[[redirects]]
+  from = "/api/register-user"
+  to = "/.netlify/functions/register-user"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify-account-exists"
+  to = "/.netlify/functions/verify-account-exists"
+  status = 200
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENTERPRISE SECURITY HEADERS (Defends against XSS, Clickjacking, MIME sniffing, and Data Leakage)
+# ─────────────────────────────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+    Cross-Origin-Resource-Policy = "same-origin"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Origin-Agent-Cluster = "?1"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, proxy-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"

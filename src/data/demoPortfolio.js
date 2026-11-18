@@ -18,8 +18,8 @@ export const INITIAL_DEMO_PORTFOLIO = {
   riskCategory: "Balanced Dynamic (Simulated)",
   
   allocation: [
-    { name: "Large Cap Bluechip Equities", percentage: 45, value: 1125000, color: "#FF851B" },
-    { name: "Sovereign & AAA Corporate Debt", percentage: 30, value: 750000, color: "#00C995" },
+    { name: "Large Cap Bluechip Equities", percentage: 45, value: 1125000, color: "#876A2E" },
+    { name: "Sovereign & AAA Corporate Debt", percentage: 30, value: 750000, color: "#50745A" },
     { name: "Sovereign Gold Bonds / Precious Metals", percentage: 15, value: 375000, color: "#F59E0B" },
     { name: "Liquid Arbitrage & Capital Reserves", percentage: 10, value: 250000, color: "#3B82F6" }
   ],

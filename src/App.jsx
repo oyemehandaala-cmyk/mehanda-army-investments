@@ -1,57 +1,195 @@
-import React, { useState, useEffect } from 'react';
-import { MessageCircle, ArrowUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
 import Services from './components/Services';
-import DemoPortfolioPreview from './components/DemoPortfolioPreview';
 import HowItWorks from './components/HowItWorks';
 import Calculator from './components/Calculator';
 import TransparencyRisk from './components/TransparencyRisk';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import LegalModal from './components/LegalModal';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsAndConditions from './components/TermsAndConditions';
 import DemoDashboard from './components/DemoDashboard';
 import AuthPortal from './components/AuthPortal';
-import RealCustomerDashboard from './components/RealCustomerDashboard';
-import { authService, isSupabaseConfigured } from './lib/supabaseClient';
+import SimpleCustomerDashboard from './components/SimpleCustomerDashboard';
+import PaymentCentre from './components/PaymentCentre';
+import AdminPortal from './components/AdminPortal';
+import AICustomerSupport from './components/AICustomerSupport';
+import GoogleSignInWelcomePopup from './components/GoogleSignInWelcomePopup';
+import LoginRequiredScreen from './components/LoginRequiredScreen';
+import SessionReminder from './components/SessionReminder';
+import { authService, isSupabaseConfigured, toAuthenticatedUser } from './lib/supabaseClient';
+import {
+  getHrefForView,
+  getViewFromLocation,
+  requiresCustomerSession
+} from './lib/navigation';
+
+const GOOGLE_OAUTH_ERROR_SESSION_KEY = 'mai_google_oauth_error_seen';
+
+function getGoogleOAuthReturnError() {
+  try {
+    if (window.sessionStorage.getItem(GOOGLE_OAUTH_ERROR_SESSION_KEY) === 'true') return '';
+  } catch {
+    // Continue with the in-memory callback error handling when storage is unavailable.
+  }
+
+  const callbackParams = new URLSearchParams(
+    `${window.location.search}&${window.location.hash.replace(/^#/, '')}`
+  );
+  const error = callbackParams.get('error');
+  if (!error) return '';
+  if (error === 'access_denied') {
+    return 'Google sign-in was cancelled or declined. You can try again.';
+  }
+  return 'Google sign-in could not be completed. Please try again.';
+}
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('home'); // 'home', 'demo-dashboard', 'auth-login', 'auth-signup', 'client-dashboard'
+  const [currentView, setCurrentViewState] = useState(() => getViewFromLocation(window.location));
+  const currentViewRef = useRef(currentView);
+  const setCurrentView = useCallback((nextView, { replace = false } = {}) => {
+    const resolvedView = typeof nextView === 'function'
+      ? nextView(currentViewRef.current)
+      : nextView;
+    if (resolvedView === currentViewRef.current) return;
+
+    currentViewRef.current = resolvedView;
+    setCurrentViewState(resolvedView);
+
+    const nextHref = getHrefForView(resolvedView, window.location.href);
+    if (nextHref === `${window.location.pathname}${window.location.search}${window.location.hash}`) return;
+    const previousState = window.history.state;
+    const historyState = previousState && typeof previousState === 'object' ? previousState : {};
+    const nextState = { ...historyState, maiView: resolvedView };
+    if (replace) {
+      window.history.replaceState(nextState, '', nextHref);
+    } else {
+      window.history.pushState(nextState, '', nextHref);
+    }
+  }, []);
   const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [legalModal, setLegalModal] = useState({ isOpen: false, title: '' });
-  const [showTopBtn, setShowTopBtn] = useState(false);
+  const [isMobileNavigationOpen, setIsMobileNavigationOpen] = useState(false);
+  const [googleOAuthReturnError] = useState(getGoogleOAuthReturnError);
+  const [isGoogleWelcomeOpen, setIsGoogleWelcomeOpen] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (authenticatedUser) {
+      setIsGoogleWelcomeOpen(false);
+      return;
+    }
+    if (currentView.startsWith('admin-') || currentView.startsWith('auth-') || currentView === 'privacy-policy' || currentView === 'terms-and-conditions') {
+      setIsGoogleWelcomeOpen(false);
+      return;
+    }
+    if (googleOAuthReturnError) {
+      setIsGoogleWelcomeOpen(true);
+      return;
+    }
+    // Do not force automatic login popup on website visit.
+    setIsGoogleWelcomeOpen(false);
+  }, [authLoading, authenticatedUser, currentView, googleOAuthReturnError]);
+
+  const closeGoogleWelcome = () => {
+    setIsGoogleWelcomeOpen(false);
+    try {
+      window.sessionStorage.setItem('mai_login_popup_dismissed', 'true');
+    } catch {
+      // ignore
+    }
+  };
 
   // Scroll to top on view changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
 
-  // Check for active Supabase session on initial load
   useEffect(() => {
-    if (isSupabaseConfigured()) {
-      authService.getSession().then(({ session }) => {
-        if (session?.user) {
-          setAuthenticatedUser({
-            id: session.user.id,
-            fullName: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
-            email: session.user.email,
-            phone: session.user.user_metadata?.phone || '',
-            accountStatus: 'active',
-            isRealAccount: true
-          });
-        }
-      });
-    }
+    const syncViewFromLocation = () => {
+      const nextView = getViewFromLocation(window.location);
+      currentViewRef.current = nextView;
+      setCurrentViewState(nextView);
+    };
+    window.addEventListener('popstate', syncViewFromLocation);
+    return () => window.removeEventListener('popstate', syncViewFromLocation);
   }, []);
 
-  // Floating Back to Top Button handler
+  // A cached token is not treated as proof of identity; Supabase validates it.
   useEffect(() => {
-    const handleScroll = () => {
-      setShowTopBtn(window.scrollY > 400);
+    if (!isSupabaseConfigured()) {
+      setAuthLoading(false);
+      return undefined;
+    }
+
+    let alive = true;
+    let validationId = 0;
+    const validateSession = async (event, session) => {
+      const currentValidation = ++validationId;
+      if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session)) {
+        setAuthenticatedUser(null);
+        setAuthLoading(false);
+        if (event === 'SIGNED_OUT') {
+          setCurrentView((view) => (requiresCustomerSession(view) ? 'home' : view));
+        }
+        return;
+      }
+
+      if (event === 'PASSWORD_RECOVERY') {
+        setCurrentView((view) => view.startsWith('admin-') ? view : 'auth-reset-password');
+      }
+      if (!session && event !== 'PASSWORD_RECOVERY') {
+        setAuthLoading(false);
+        return;
+      }
+
+      const { user, error } = await authService.getCurrentUser();
+      if (!alive || currentValidation !== validationId) return;
+      const isOauthUser = Boolean(
+        user?.app_metadata?.provider && user.app_metadata.provider !== 'email'
+      ) || (Array.isArray(user?.identities) && user.identities.some(i => i.provider && i.provider !== 'email'));
+
+      const isConfirmed = Boolean(user?.email_confirmed_at || user?.phone_confirmed_at || user?.confirmed_at || isOauthUser);
+      if (error || !isConfirmed) {
+        setAuthenticatedUser(null);
+        setAuthLoading(false);
+        await authService.signOut();
+        return;
+      }
+
+      setAuthenticatedUser(toAuthenticatedUser(user));
+      setAuthLoading(false);
+      setCurrentView((view) => {
+        if (view.startsWith('admin-')) return view;
+        if (event === 'PASSWORD_RECOVERY' || view === 'auth-reset-password') return 'auth-reset-password';
+        let storedTarget = null;
+        try {
+          storedTarget = window.sessionStorage.getItem('mai_auth_redirect_target');
+          if (storedTarget) window.sessionStorage.removeItem('mai_auth_redirect_target');
+        } catch {
+          // ignore
+        }
+        if (storedTarget && ['payments', 'student-loan', 'investment-info', 'loans', 'loan-categories'].includes(storedTarget)) {
+          return storedTarget;
+        }
+        if (['payments', 'student-loan', 'investment-info', 'loans', 'loan-categories'].includes(view)) {
+          return view;
+        }
+        return 'client-dashboard';
+      });
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    const subscription = authService.onAuthStateChange((event, session) => {
+      window.setTimeout(() => validateSession(event, session), 0);
+    });
+    return () => {
+      alive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const scrollTo = (href) => {
@@ -76,15 +214,99 @@ export default function App() {
   };
 
   const OFFICIAL_WHATSAPP_URL = "https://wa.me/919812947813?text=Hello%20Mehanda%20Army%20Investments%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services.";
+  const pageWithAssistant = (page) => (
+    <>
+      {page}
+      {!currentView.startsWith('auth-') && !requiresCustomerSession(currentView) && (
+        <AICustomerSupport
+          setCurrentView={setCurrentView}
+          scrollTo={scrollTo}
+          whatsappUrl={OFFICIAL_WHATSAPP_URL}
+        />
+      )}
+      {isGoogleWelcomeOpen &&
+        !currentView.startsWith('auth-') &&
+        !currentView.startsWith('admin-') &&
+        !requiresCustomerSession(currentView) && (
+        <GoogleSignInWelcomePopup
+          onClose={closeGoogleWelcome}
+          initialErrorMessage={googleOAuthReturnError}
+          setCurrentView={setCurrentView}
+          setAuthenticatedUser={setAuthenticatedUser}
+        />
+      )}
+      <SessionReminder />
+    </>
+  );
+
+  if (requiresCustomerSession(currentView) && authLoading) {
+    return <div className="min-h-screen bg-white" role="status" aria-label="Checking secure session" />;
+  }
+
+  if (requiresCustomerSession(currentView) && !authenticatedUser) {
+    return pageWithAssistant(
+      <LoginRequiredScreen
+        targetViewTitle={currentView === 'student-loan'
+          ? 'Student Loan Enquiry'
+          : (currentView === 'loans' || currentView === 'loan-categories')
+            ? 'Loan Facilitation Desk'
+            : currentView === 'investment-info'
+              ? 'Investment Information'
+              : currentView === 'payments'
+                ? 'Payment Centre'
+                : 'customer services'}
+        targetView={currentView}
+        setCurrentView={setCurrentView}
+        setAuthenticatedUser={setAuthenticatedUser}
+      />
+    );
+  }
+
+  // View Routing: Professional Payment Centre
+  if (currentView === 'payments') {
+    return pageWithAssistant(
+      <PaymentCentre
+        setCurrentView={setCurrentView}
+        currentUser={authenticatedUser}
+      />
+    );
+  }
+
+  // View Routing: Public Privacy Policy (Zero Login Required)
+  if (currentView === 'privacy-policy') {
+    return pageWithAssistant(
+      <PrivacyPolicy
+        setCurrentView={setCurrentView}
+        scrollTo={scrollTo}
+        openLegalModal={openLegalModal}
+      />
+    );
+  }
+
+  // View Routing: Public Terms & Conditions (Zero Login Required)
+  if (currentView === 'terms-and-conditions') {
+    return pageWithAssistant(
+      <TermsAndConditions
+        setCurrentView={setCurrentView}
+        scrollTo={scrollTo}
+        openLegalModal={openLegalModal}
+      />
+    );
+  }
+
+  // Admin routes are separate from customer login and the customer support widget.
+  if (currentView === 'admin-login' || currentView === 'admin-dashboard') {
+    return <AdminPortal setCurrentView={setCurrentView} />;
+  }
 
   // View Routing: Demo Dashboard (Zero Signup)
   if (currentView === 'demo-dashboard') {
-    return <DemoDashboard setCurrentView={setCurrentView} />;
+    return pageWithAssistant(<DemoDashboard setCurrentView={setCurrentView} />);
   }
 
   // View Routing: Real Client Login
   if (currentView === 'auth-login') {
-    return (
+    return pageWithAssistant(
       <AuthPortal 
         initialMode="login" 
         setCurrentView={setCurrentView} 
@@ -95,7 +317,7 @@ export default function App() {
 
   // View Routing: Real Client Sign Up
   if (currentView === 'auth-signup') {
-    return (
+    return pageWithAssistant(
       <AuthPortal 
         initialMode="signup" 
         setCurrentView={setCurrentView} 
@@ -104,11 +326,51 @@ export default function App() {
     );
   }
 
+  if (currentView === 'auth-reset-password') {
+    return pageWithAssistant(
+      <AuthPortal
+        initialMode="reset-password"
+        setCurrentView={setCurrentView}
+        setAuthenticatedUser={setAuthenticatedUser}
+      />
+    );
+  }
+
+  if (currentView === 'auth-recovery-key' || currentView === 'auth-rotate-recovery-key') {
+    if (authenticatedUser) {
+      return pageWithAssistant(
+        <SimpleCustomerDashboard
+          user={authenticatedUser}
+          initialView="home"
+          setCurrentView={setCurrentView}
+          setAuthenticatedUser={setAuthenticatedUser}
+        />
+      );
+    }
+    return pageWithAssistant(
+      <AuthPortal
+        initialMode="login"
+        setCurrentView={setCurrentView}
+        setAuthenticatedUser={setAuthenticatedUser}
+      />
+    );
+  }
+
   // View Routing: Authenticated Real Customer Dashboard
-  if (currentView === 'client-dashboard' && authenticatedUser) {
-    return (
-      <RealCustomerDashboard 
+  if (
+    authenticatedUser &&
+    ['client-dashboard', 'loans', 'loan-categories', 'student-loan', 'investment-info'].includes(currentView)
+  ) {
+    return pageWithAssistant(
+      <SimpleCustomerDashboard
         user={authenticatedUser} 
+        initialView={currentView === 'student-loan'
+          ? 'student-loan'
+          : (currentView === 'loans' || currentView === 'loan-categories')
+            ? 'loan-categories'
+            : currentView === 'investment-info'
+              ? 'investment-info'
+              : 'home'}
         setCurrentView={setCurrentView} 
         setAuthenticatedUser={setAuthenticatedUser} 
       />
@@ -117,13 +379,14 @@ export default function App() {
 
   // Default: Homepage View
   return (
-    <div className="font-sans text-slate-900 bg-white min-h-screen selection:bg-[#FF851B] selection:text-white">
+    <div className="font-sans text-slate-900 bg-white min-h-screen selection:bg-[#876A2E] selection:text-white">
       
       {/* Navigation */}
       <Navbar 
         currentView={currentView} 
         setCurrentView={setCurrentView} 
         scrollTo={scrollTo} 
+        onMobileMenuChange={setIsMobileNavigationOpen}
       />
 
       {/* Main Page Flow */}
@@ -140,10 +403,6 @@ export default function App() {
           setCurrentView={setCurrentView} 
         />
         
-        <DemoPortfolioPreview 
-          setCurrentView={setCurrentView} 
-        />
-        
         <HowItWorks />
         
         <Calculator 
@@ -152,6 +411,7 @@ export default function App() {
         
         <TransparencyRisk 
           openLegalModal={openLegalModal} 
+          setCurrentView={setCurrentView}
         />
         
         <Contact />
@@ -161,31 +421,23 @@ export default function App() {
       <Footer 
         scrollTo={scrollTo} 
         openLegalModal={openLegalModal} 
+        setCurrentView={setCurrentView}
       />
 
-      {/* Floating Action Buttons (Clean & Non-Intrusive) */}
-      <div className="fixed bottom-5 right-5 flex flex-col items-end gap-2.5 z-40">
-        {showTopBtn && (
-          <button 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-11 h-11 bg-[#081525] text-white rounded-full flex items-center justify-center shadow-xl hover:bg-slate-800 border border-white/20 transition-all hover:scale-105 active:scale-95"
-            aria-label="Scroll to top"
-          >
-            <ArrowUp size={20} />
-          </button>
-        )}
-        
-        <a 
-          href={OFFICIAL_WHATSAPP_URL}
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="group flex items-center gap-2 bg-[#25D366] text-white py-2.5 px-3.5 sm:px-4 rounded-full shadow-2xl hover:bg-emerald-600 transition-all hover:scale-105 active:scale-95"
-          aria-label="Contact on WhatsApp"
-        >
-          <MessageCircle size={22} />
-          <span className="font-bold text-xs hidden sm:inline-block pr-1">Chat on WhatsApp</span>
-        </a>
-      </div>
+      <AICustomerSupport
+        setCurrentView={setCurrentView}
+        scrollTo={scrollTo}
+        whatsappUrl={OFFICIAL_WHATSAPP_URL}
+        isHidden={isMobileNavigationOpen}
+      />
+      {isGoogleWelcomeOpen && (
+        <GoogleSignInWelcomePopup
+          onClose={closeGoogleWelcome}
+          initialErrorMessage={googleOAuthReturnError}
+          setCurrentView={setCurrentView}
+          setAuthenticatedUser={setAuthenticatedUser}
+        />
+      )}
 
       {/* Regulatory & Legal Modal */}
       <LegalModal 

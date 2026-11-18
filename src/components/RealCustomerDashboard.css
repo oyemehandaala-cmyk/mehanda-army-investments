@@ -1,0 +1,664 @@
+.mai-portal {
+  --portal-bg: #071323;
+  --portal-panel: #0e2035;
+  --portal-panel-raised: #132943;
+  --portal-border: rgb(255 255 255 / 9%);
+  --portal-muted: #9aa9bc;
+  --portal-text: #f5f7fb;
+  --portal-gold: #d3b36a;
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 70% -15%, rgb(44 79 116 / 25%), transparent 40rem),
+    var(--portal-bg);
+  color: var(--portal-text);
+  font-family: 'Geist Variable', sans-serif;
+}
+
+.mai-portal * {
+  box-sizing: border-box;
+}
+
+.mai-portal-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1.5rem 1rem 1rem;
+  border-right: 1px solid var(--portal-border);
+  background: rgb(8 22 39 / 94%);
+}
+
+.mai-portal-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 2.5rem;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mai-portal-brand-mark {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(211 179 106 / 40%);
+  border-radius: 0.9rem;
+  background: linear-gradient(145deg, #1d3857, #10243b);
+  color: var(--portal-gold);
+}
+
+.mai-portal-brand strong,
+.mai-portal-brand small {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mai-portal-brand strong {
+  font-size: 0.77rem;
+  letter-spacing: 0.07em;
+}
+
+.mai-portal-brand small {
+  margin-top: 0.25rem;
+  color: var(--portal-muted);
+  font-size: 0.59rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.mai-portal-nav-label,
+.mai-portal-eyebrow {
+  margin: 0;
+  color: var(--portal-gold);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.mai-portal-nav-label {
+  padding: 0 0.75rem;
+  color: #78889d;
+}
+
+.mai-portal-nav {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+}
+
+.mai-portal-nav-link {
+  display: flex;
+  min-height: 2.7rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: #aab8ca;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.mai-portal-nav-link:hover,
+.mai-portal-nav-link.is-active {
+  border-color: rgb(211 179 106 / 16%);
+  background: linear-gradient(90deg, rgb(211 179 106 / 13%), rgb(211 179 106 / 4%));
+  color: #f8e7b5;
+}
+
+.mai-portal-nav-link.is-active {
+  font-weight: 700;
+}
+
+.mai-portal-nav-chevron {
+  margin-left: auto;
+}
+
+.mai-portal-sidebar-bottom {
+  display: grid;
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.mai-portal-user {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.5rem;
+  border-top: 1px solid var(--portal-border);
+}
+
+.mai-portal-avatar {
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(211 179 106 / 35%);
+  border-radius: 50%;
+  background: #172d47;
+  color: #f8e7b5;
+  font-weight: 800;
+}
+
+.mai-portal-user-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.mai-portal-user-copy strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mai-portal-user-copy small {
+  color: var(--portal-muted);
+  font-size: 0.65rem;
+}
+
+.mai-portal-public-link,
+.mai-portal-logout {
+  display: inline-flex;
+  min-height: 2.4rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.7rem;
+  background: rgb(255 255 255 / 3%);
+  color: #d4ddeb;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.mai-portal-public-link:hover,
+.mai-portal-logout:hover {
+  border-color: rgb(211 179 106 / 35%);
+  background: rgb(211 179 106 / 9%);
+}
+
+.mai-portal-main {
+  min-width: 0;
+}
+
+.mai-portal-topbar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  min-height: 5.2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem clamp(1.25rem, 3vw, 2.8rem);
+  border-bottom: 1px solid var(--portal-border);
+  background: rgb(7 19 35 / 88%);
+  backdrop-filter: blur(16px);
+}
+
+.mai-portal-topbar h1 {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.mai-portal-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mai-portal-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #b7c8dc;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.mai-portal-session svg {
+  color: #7ec6a4;
+}
+
+.mai-portal-clock {
+  color: var(--portal-muted);
+  font-size: 0.7rem;
+}
+
+.mai-portal-logout {
+  padding: 0 0.8rem;
+}
+
+.mai-portal-content {
+  display: grid;
+  width: min(100%, 1440px);
+  gap: 1.15rem;
+  margin: 0 auto;
+  padding: 1.75rem clamp(1.25rem, 3vw, 2.8rem) 2.5rem;
+}
+
+.portal-card {
+  border: 1px solid var(--portal-border);
+  border-radius: 1.1rem;
+  background: linear-gradient(145deg, rgb(19 41 65 / 96%), rgb(13 31 51 / 96%));
+  box-shadow: 0 16px 38px rgb(0 0 0 / 12%);
+}
+
+.mai-portal-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.38fr);
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background:
+    radial-gradient(ellipse at 95% 0%, rgb(211 179 106 / 12%), transparent 20rem),
+    linear-gradient(135deg, #132c47, #0d2035);
+}
+
+.mai-portal-overview-copy h2 {
+  margin: 0.55rem 0;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.mai-portal-overview-copy > p:not(.mai-portal-eyebrow) {
+  max-width: 42rem;
+  margin: 0;
+  color: #adbbcd;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.mai-portal-data-alert {
+  margin-top: 1rem !important;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgb(211 179 106 / 23%);
+  border-radius: 0.7rem;
+  background: rgb(211 179 106 / 7%);
+  color: #f3dfaa !important;
+  font-size: 0.75rem !important;
+}
+
+.mai-portal-completion {
+  padding: 1rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.85rem;
+  background: rgb(5 17 31 / 44%);
+}
+
+.mai-portal-completion-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #c4cfdd;
+  font-size: 0.73rem;
+}
+
+.mai-portal-completion-heading strong {
+  color: #f8e7b5;
+  font-size: 1.2rem;
+}
+
+.mai-portal-progress {
+  height: 0.42rem;
+  overflow: hidden;
+  margin: 0.85rem 0 0.55rem;
+  border-radius: 99px;
+  background: rgb(255 255 255 / 9%);
+}
+
+.mai-portal-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #b4914b, #f1d78f);
+  transition: width 250ms ease;
+}
+
+.mai-portal-completion small {
+  color: var(--portal-muted);
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
+.mai-portal-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.mai-portal-stat {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.mai-portal-stat-icon,
+.mai-portal-panel-icon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(211 179 106 / 17%);
+  border-radius: 0.75rem;
+  background: rgb(211 179 106 / 8%);
+  color: var(--portal-gold);
+}
+
+.mai-portal-stat > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.28rem;
+}
+
+.mai-portal-stat small {
+  overflow: hidden;
+  color: var(--portal-muted);
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mai-portal-stat strong {
+  overflow-wrap: anywhere;
+  color: #f4f6fb;
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.mai-portal-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mai-portal-section-heading h2 {
+  margin: 0.25rem 0 0;
+  color: var(--portal-text);
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.mai-portal-section-heading > svg {
+  color: var(--portal-gold);
+}
+
+.portal-anchor {
+  scroll-margin-top: 6.3rem;
+}
+
+.mai-portal-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.mai-portal-panel {
+  min-width: 0;
+  padding: 1.2rem;
+}
+
+.mai-portal-panel-icon {
+  margin-bottom: 0.85rem;
+}
+
+.mai-portal-panel h2,
+.mai-portal-support h2 {
+  margin: 0.4rem 0 0.55rem;
+  color: var(--portal-text);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.mai-portal-panel > p:not(.mai-portal-eyebrow),
+.mai-portal-support p:not(.mai-portal-eyebrow) {
+  margin: 0;
+  color: #aab9ca;
+  font-size: 0.74rem;
+  line-height: 1.7;
+}
+
+.mai-portal-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #f1d78f;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mai-portal-support {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.3rem;
+}
+
+.mai-portal-support-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.mai-portal-support-actions a {
+  display: inline-flex;
+  min-height: 2.4rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--portal-border);
+  border-radius: 0.65rem;
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.mai-portal-support-actions a:hover {
+  border-color: rgb(211 179 106 / 35%);
+  background: rgb(211 179 106 / 8%);
+}
+
+.mai-portal-support-actions svg {
+  color: var(--portal-gold);
+}
+
+.mai-portal-footer-note {
+  margin: 0;
+  color: #7f90a5;
+  font-size: 0.67rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.mai-portal-mobile-nav {
+  display: none;
+}
+
+.mai-portal [class*="text-[#50745A]"] {
+  color: var(--portal-gold) !important;
+}
+
+.mai-portal [class*="bg-[#50745A]"] {
+  background-color: var(--portal-gold) !important;
+}
+
+@media (max-width: 1100px) {
+  .mai-portal {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .mai-portal-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mai-portal-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .mai-portal {
+    display: block;
+    min-height: 100dvh;
+  }
+
+  .mai-portal-sidebar {
+    display: none;
+  }
+
+  .mai-portal-topbar {
+    min-height: 4.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .mai-portal-topbar h1 {
+    font-size: 1rem;
+  }
+
+  .mai-portal-topbar-actions {
+    gap: 0.5rem;
+  }
+
+  .mai-portal-session,
+  .mai-portal-clock {
+    display: none;
+  }
+
+  .mai-portal-logout {
+    min-width: 2.5rem;
+    padding: 0 0.6rem;
+  }
+
+  .mai-portal-content {
+    gap: 0.9rem;
+    padding: 1rem 0.85rem 6.5rem;
+  }
+
+  .mai-portal-overview {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .mai-portal-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mai-portal-support {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mai-portal-mobile-nav {
+    position: fixed;
+    z-index: 50;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    overflow-x: auto;
+    gap: 0.15rem;
+    padding: 0.45rem max(0.5rem, env(safe-area-inset-right)) calc(0.45rem + env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+    border-top: 1px solid var(--portal-border);
+    background: rgb(7 19 35 / 96%);
+    backdrop-filter: blur(16px);
+    scrollbar-width: none;
+  }
+
+  .mai-portal-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mai-portal-mobile-link {
+    display: grid;
+    min-width: 4.5rem;
+    min-height: 3.2rem;
+    flex: 1 0 auto;
+    place-items: center;
+    gap: 0.2rem;
+    padding: 0.3rem 0.45rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: transparent;
+    color: #96a7bc;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .mai-portal-mobile-link span {
+    max-width: 6.5rem;
+    overflow: hidden;
+    font-size: 0.57rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mai-portal-mobile-link.is-active {
+    background: rgb(211 179 106 / 10%);
+    color: #f3dc9f;
+  }
+}
+
+@media (max-width: 430px) {
+  .mai-portal-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mai-portal-stat {
+    padding: 0.8rem;
+  }
+
+  .mai-portal-profile-action-row {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mai-portal *,
+  .mai-portal *::before,
+  .mai-portal *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
