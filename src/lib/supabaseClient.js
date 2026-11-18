@@ -6,15 +6,24 @@ const DEFAULT_SUPABASE_URL = 'https://epjjsuousttlvlpjtnvs.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwampzdW91c3R0bHZscGp0bnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4OTE5NDAsImV4cCI6MjEwOTQ2Nzk0MH0.AnzmwC6uI2SNNxME07i7FOpMwurS470iK2fHdV5z61Q';
 
 const env = (typeof import.meta !== 'undefined' && import.meta.env) || (typeof process !== 'undefined' && process.env) || {};
-const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const legacyAnonKey = env.VITE_SUPABASE_ANON_KEY;
-const supabaseKey = publishableKey || legacyAnonKey || DEFAULT_SUPABASE_KEY;
-const supabaseKeyVariable = publishableKey
+const rawSupabaseUrl = env.VITE_SUPABASE_URL;
+const rawPublishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const rawLegacyAnonKey = env.VITE_SUPABASE_ANON_KEY;
+const candidateKey = rawPublishableKey || rawLegacyAnonKey;
+
+const supabaseUrl = (rawSupabaseUrl && getSupabaseConfigurationIssue(rawSupabaseUrl, DEFAULT_SUPABASE_KEY) === null)
+  ? rawSupabaseUrl
+  : DEFAULT_SUPABASE_URL;
+
+const supabaseKey = (candidateKey && getSupabaseConfigurationIssue(DEFAULT_SUPABASE_URL, candidateKey) === null)
+  ? candidateKey
+  : DEFAULT_SUPABASE_KEY;
+
+const supabaseKeyVariable = rawPublishableKey
   ? 'VITE_SUPABASE_PUBLISHABLE_KEY'
-  : legacyAnonKey
+  : rawLegacyAnonKey
     ? 'VITE_SUPABASE_ANON_KEY'
-    : 'VITE_SUPABASE_PUBLISHABLE_KEY';
+    : 'DEFAULT_SUPABASE_KEY';
 const configurationIssue = getSupabaseConfigurationIssue(supabaseUrl, supabaseKey);
 
 export const isSupabaseConfigured = () => {

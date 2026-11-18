@@ -251,12 +251,6 @@ export default function AuthPortal({
       return;
     }
 
-    if (!hasConfiguredBackend) {
-      logConfigurationFailure('signup');
-      setErrorMessage(ACCOUNT_SERVICES_UNAVAILABLE);
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await fetch(getApiUrl('/api/send-email-otp'), {

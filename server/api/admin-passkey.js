@@ -60,7 +60,10 @@ export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   const headers = req.headers || {};
-  const rpId = getRpId(headers);
+  const body = req.body || {};
+  const clientRpId = (typeof body.clientRpId === 'string' && body.clientRpId.trim()) ? body.clientRpId.trim().toLowerCase() : null;
+  const safeClientRpId = (clientRpId === 'mehandaarmy.net' || clientRpId === 'localhost' || clientRpId === '127.0.0.1' || clientRpId?.endsWith('.vercel.app') || clientRpId?.endsWith('.github.io')) ? clientRpId : null;
+  const rpId = safeClientRpId || getRpId(headers);
   const expectedOrigin = getExpectedOrigin(headers);
 
   if (req.method === 'GET') {

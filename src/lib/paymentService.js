@@ -271,10 +271,19 @@ export async function getPasskeyLoginOptions() {
   });
 }
 
+export function getClientRpId(fallbackId) {
+  if (typeof window === 'undefined') return fallbackId || 'mehandaarmy.net';
+  const host = window.location.hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1') return 'localhost';
+  if (host.endsWith('mehandaarmy.net')) return 'mehandaarmy.net';
+  return host;
+}
+
 export async function verifyPasskeyLogin(webauthnResponse) {
+  const clientRpId = getClientRpId();
   return adminRequest('/api/admin-passkey', {
     method: 'POST',
-    body: JSON.stringify({ action: 'login-verify', response: webauthnResponse }),
+    body: JSON.stringify({ action: 'login-verify', response: webauthnResponse, clientRpId }),
   });
 }
 
@@ -284,10 +293,11 @@ export async function authenticateWithPasskey() {
   }
 
   const { options } = await getPasskeyLoginOptions();
+  const effectiveRpId = getClientRpId(options.rpId);
 
   const publicKeyCredentialRequestOptions = {
     challenge: bufferFromBase64Url(options.challenge),
-    rpId: options.rpId,
+    rpId: effectiveRpId,
     timeout: options.timeout || 60000,
     userVerification: options.userVerification || 'required',
   };
@@ -331,9 +341,10 @@ export async function getPasskeyRegisterOptions() {
 }
 
 export async function verifyPasskeyRegister({ response, deviceName }) {
+  const clientRpId = getClientRpId();
   return adminRequest('/api/admin-passkey', {
     method: 'POST',
-    body: JSON.stringify({ action: 'register-verify', response, deviceName }),
+    body: JSON.stringify({ action: 'register-verify', response, deviceName, clientRpId }),
   });
 }
 
@@ -343,10 +354,14 @@ export async function registerPasskeyDevice(deviceName = 'Admin Device') {
   }
 
   const { options } = await getPasskeyRegisterOptions();
+  const effectiveRpId = getClientRpId(options.rp?.id);
 
   const publicKeyCredentialCreationOptions = {
     challenge: bufferFromBase64Url(options.challenge),
-    rp: options.rp,
+    rp: {
+      ...options.rp,
+      id: effectiveRpId,
+    },
     user: {
       id: bufferFromBase64Url(options.user.id),
       name: options.user.name,
@@ -398,9 +413,14 @@ export async function enrollFirstTimePasskey({ enrollmentToken, deviceToken, dev
     body: JSON.stringify({ action: 'enroll-options', enrollmentToken }),
   });
 
+  const effectiveRpId = getClientRpId(options.rp?.id);
+
   const publicKeyCredentialCreationOptions = {
     challenge: bufferFromBase64Url(options.challenge),
-    rp: options.rp,
+    rp: {
+      ...options.rp,
+      id: effectiveRpId,
+    },
     user: {
       id: bufferFromBase64Url(options.user.id),
       name: options.user.name,
@@ -446,6 +466,7 @@ export async function enrollFirstTimePasskey({ enrollmentToken, deviceToken, dev
       enrollmentToken,
       deviceToken,
       deviceName,
+      clientRpId: effectiveRpId,
       response: responsePayload,
     }),
   });

@@ -209,7 +209,9 @@ export default function StudentLoanEnquiryPage({
   const isMinor = Number.isInteger(age) && age < 18;
 
   const selectedState = useMemo(
-    () => INDIA_LOCATION_DATA.states.find((item) => item.name === form.state),
+    () => INDIA_LOCATION_DATA.states.find(
+      (item) => item.name.toLowerCase() === (form.state || '').trim().toLowerCase()
+    ),
     [form.state]
   );
   const availableDistricts = selectedState?.districts || [];
@@ -357,14 +359,14 @@ export default function StudentLoanEnquiryPage({
     ) {
       errors.email = 'Please verify your Gmail / email address with OTP before proceeding.';
     }
-    if (!selectedState) {
+    if (!selectedState && !form.state.trim()) {
       errors.state = 'Select a State / Union Territory from the official directory.';
     }
-    if (!availableDistricts.includes(form.district)) {
-      errors.district = 'Select a valid district belonging to the chosen state.';
+    if (!form.district || !form.district.trim()) {
+      errors.district = 'Select your district.';
     }
     if (!form.city || form.city.trim().length < 2) {
-      errors.city = 'Enter your city, town, or village.';
+      errors.city = 'Enter your city, town, or village (at least 2 characters).';
     }
     if (!form.address || form.address.trim().length < 5) {
       errors.address = 'Enter your complete residential address (at least 5 characters).';
@@ -1319,53 +1321,56 @@ export default function StudentLoanEnquiryPage({
                 </div>
 
                 <Field label="State / Union Territory *" error={fieldErrors.state}>
-                  <input
+                  <select
                     className={getFieldClass(fieldErrors.state)}
-                    list="mai-wizard-states"
                     value={form.state}
                     onChange={(e) => updateState(e.target.value)}
-                    placeholder="Search State or UT"
                     autoComplete="address-level1"
-                  />
-                  <datalist id="mai-wizard-states">
+                  >
+                    <option value="">Select State / Union Territory</option>
                     {INDIA_LOCATION_DATA.states.map((item) => (
-                      <option key={item.code} value={item.name} />
+                      <option key={item.code} value={item.name}>
+                        {item.name}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                 </Field>
 
                 <Field label="District *" error={fieldErrors.district}>
-                  <input
+                  <select
                     className={getFieldClass(fieldErrors.district)}
-                    list="mai-wizard-districts"
                     value={form.district}
                     disabled={!selectedState}
                     onChange={(e) => updateDistrict(e.target.value)}
-                    placeholder={selectedState ? "Select District" : "Select State first"}
                     autoComplete="address-level2"
-                  />
-                  <datalist id="mai-wizard-districts">
+                  >
+                    <option value="">{selectedState ? "Select District" : "Select State first"}</option>
                     {availableDistricts.map((district) => (
-                      <option key={district} value={district} />
+                      <option key={district} value={district}>
+                        {district}
+                      </option>
                     ))}
-                  </datalist>
+                    <option value="Other">Other / Not Listed</option>
+                  </select>
                 </Field>
 
-                <Field label="City / Town *" error={fieldErrors.city}>
+                <Field label="City / Town / Village *" error={fieldErrors.city}>
                   <input
+                    type="text"
                     className={getFieldClass(fieldErrors.city)}
                     list="mai-wizard-cities"
                     value={form.city}
-                    disabled={!form.district}
                     onChange={(e) => updateField('city', e.target.value)}
-                    placeholder={form.district ? "Enter or select City" : "Select District first"}
+                    placeholder="Enter your City, Town, or Village"
                     autoComplete="address-level2"
                   />
-                  <datalist id="mai-wizard-cities">
-                    {citySuggestions.map((city) => (
-                      <option key={city} value={city} />
-                    ))}
-                  </datalist>
+                  {citySuggestions.length > 0 && (
+                    <datalist id="mai-wizard-cities">
+                      {citySuggestions.map((city) => (
+                        <option key={city} value={city} />
+                      ))}
+                    </datalist>
+                  )}
                 </Field>
 
                 <Field label="PIN Code (Postal Code) *" error={fieldErrors.pinCode}>

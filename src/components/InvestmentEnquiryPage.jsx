@@ -961,6 +961,7 @@ export default function InvestmentEnquiryPage({
                     {availableDistricts.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
+                    <option value="Other">Other / Not Listed</option>
                   </select>
                 </Field>
 
@@ -969,7 +970,7 @@ export default function InvestmentEnquiryPage({
                     className={getFieldClass(fieldErrors.city)}
                     value={form.city}
                     onChange={(e) => updateField('city', e.target.value)}
-                    placeholder=""
+                    placeholder="Enter your City or Town"
                     maxLength={80}
                   />
                 </Field>

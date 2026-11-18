@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   GraduationCap, ShieldAlert, CheckCircle2, AlertTriangle,
   ArrowLeft, BookOpen, Clock, FileText, User, Phone, Mail,
@@ -13,15 +13,9 @@ import {
 import { authService } from '../lib/supabaseClient';
 import { loadRazorpayScript, createPaymentOrder, verifyPaymentSignature } from '../lib/paymentService';
 import LiveDateTime from './LiveDateTime';
+import INDIA_LOCATION_DATA from '../data/indiaLocations.json';
 
-const APPLICANT_STATES = [
-  'Haryana',
-  'Punjab',
-  'Delhi',
-  'Rajasthan',
-  'Uttar Pradesh',
-  'Himachal Pradesh',
-];
+const APPLICANT_STATES = INDIA_LOCATION_DATA.states.map((s) => s.name);
 const MAX_ID_DOCUMENT_SIZE = 5 * 1024 * 1024;
 const ID_DOCUMENT_TYPES = new Set([
   'application/pdf',
@@ -140,6 +134,13 @@ export default function StudentLoan({ currentUser, setCurrentView }) {
 
   /* ─── Computed ─────────────────────────────────────────────── */
   const age = calcAge(form.dateOfBirth);
+  const applicantDistricts = useMemo(() => {
+    if (!form.applicantState) return [];
+    const found = INDIA_LOCATION_DATA.states.find(
+      (s) => s.name.toLowerCase() === form.applicantState.toLowerCase()
+    );
+    return found ? found.districts : [];
+  }, [form.applicantState]);
 
   useEffect(() => {
     const generation = ++institutionSearchGeneration.current;
@@ -892,7 +893,10 @@ export default function StudentLoan({ currentUser, setCurrentView }) {
                     id="field-applicantState"
                     name="applicantState"
                     value={form.applicantState}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setForm((prev) => ({ ...prev, applicantDistrict: '' }));
+                    }}
                     className={selectCls(errors.applicantState)}
                     required
                   >
@@ -903,16 +907,34 @@ export default function StudentLoan({ currentUser, setCurrentView }) {
                   </select>
                 </FieldGroup>
                 <FieldGroup id="field-applicantDistrict" label="District *" error={errors.applicantDistrict}>
-                  <input
-                    id="field-applicantDistrict"
-                    name="applicantDistrict"
-                    type="text"
-                    value={form.applicantDistrict}
-                    onChange={handleChange}
-                    maxLength={100}
-                    className={inputCls(errors.applicantDistrict)}
-                    required
-                  />
+                  {applicantDistricts.length > 0 ? (
+                    <select
+                      id="field-applicantDistrict"
+                      name="applicantDistrict"
+                      value={form.applicantDistrict}
+                      onChange={handleChange}
+                      className={selectCls(errors.applicantDistrict)}
+                      required
+                    >
+                      <option value="">Select district</option>
+                      {applicantDistricts.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                      <option value="Other">Other / Not Listed</option>
+                    </select>
+                  ) : (
+                    <input
+                      id="field-applicantDistrict"
+                      name="applicantDistrict"
+                      type="text"
+                      value={form.applicantDistrict}
+                      onChange={handleChange}
+                      placeholder={form.applicantState ? "Enter district" : "Select state first"}
+                      maxLength={100}
+                      className={inputCls(errors.applicantDistrict)}
+                      required
+                    />
+                  )}
                 </FieldGroup>
                 <FieldGroup id="field-applicantCity" label="City / Village *" error={errors.applicantCity}>
                   <input
@@ -921,6 +943,7 @@ export default function StudentLoan({ currentUser, setCurrentView }) {
                     type="text"
                     value={form.applicantCity}
                     onChange={handleChange}
+                    placeholder="Enter City / Village"
                     maxLength={120}
                     className={inputCls(errors.applicantCity)}
                     required

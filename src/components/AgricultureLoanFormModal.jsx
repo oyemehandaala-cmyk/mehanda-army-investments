@@ -589,6 +589,7 @@ export default function AgricultureLoanFormModal({
                         }}
                         className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs focus:border-[#876A2E] focus:outline-none"
                       >
+                        <option value="">Select State</option>
                         {INDIA_LOCATIONS.states.map((s) => (
                           <option key={s.name} value={s.name}>{s.name}</option>
                         ))}
@@ -606,6 +607,7 @@ export default function AgricultureLoanFormModal({
                         {availableDistricts.map((d) => (
                           <option key={d} value={d}>{d}</option>
                         ))}
+                        <option value="Other">Other / Not Listed</option>
                       </select>
                     </div>
                     <div>

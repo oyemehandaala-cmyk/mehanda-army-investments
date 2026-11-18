@@ -132,11 +132,9 @@ export default function SimpleCustomerDashboard({ user, initialView = 'home', se
         avatar_url: photoResult?.photoUrl || loadedProfile.avatar_url || user.avatarUrl || null,
       } : fallbackProfile);
       setProfileError(
-        loadedProfileError && !loadedProfileError.message?.includes('<')
+        loadedProfileError && !loadedProfileError.message?.includes('<') && !loadedProfileError.message?.toLowerCase().includes('json')
           ? `Saved profile details could not be loaded. Showing account information instead. ${loadedProfileError.message}`
-          : photoResult?.error && !photoResult.error.message?.includes('<')
-            ? `Profile photo could not be loaded. ${photoResult.error.message}`
-            : ''
+          : ''
       );
       if (!user?.authProviders?.includes('email') || !user?.emailVerifiedAt) {
         setRecoveryStatus('not-applicable');
