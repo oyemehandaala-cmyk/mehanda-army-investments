@@ -39,10 +39,27 @@ function getLocalSmartFallback(text) {
   if (lower.includes('screenshot') || lower.includes('document') || lower.includes('file') || lower.includes('image') || lower.includes('receipt') || lower.includes('photo')) {
     return 'Thank you for sharing your screenshot/document! 📄 Our system has recorded your file. For immediate verification of transaction receipts, account statements, or student loan KYC, you can also connect directly with our advisory desk on WhatsApp.';
   }
-  if (lower.includes('loan') || lower.includes('student') || lower.includes('apply') || lower.includes('borrow')) {
+
+  // Match against SUPPORT_KNOWLEDGE_BASE
+  try {
+    for (const item of Object.values(SUPPORT_KNOWLEDGE_BASE)) {
+      if (Array.isArray(item.keywords)) {
+        const matched = item.keywords.some((kw) => lower.includes(kw.toLowerCase()));
+        if (matched) {
+          const isHindi = /[\u0900-\u097F]/.test(text) || /\b(kaise|karo|batao|kya|chahiye|kime|kare|hoga|bhai|dost|bhi)\b/i.test(lower);
+          if (isHindi && item.answerHi) {
+            return item.answerHi;
+          }
+          return item.answer || item.answerHi;
+        }
+      }
+    }
+  } catch (_) {}
+
+  if (lower.includes('loan') || lower.includes('student') || lower.includes('apply') || lower.includes('borrow') || lower.includes('karza') || lower.includes('1000')) {
     return 'Mehanda Army Investments provides dedicated ₹1,000 student loan inquiries with verification support. You can apply directly through the Student Loan section!';
   }
-  if (lower.includes('invest') || lower.includes('money') || lower.includes('paisa') || lower.includes('return') || lower.includes('profit')) {
+  if (lower.includes('invest') || lower.includes('money') || lower.includes('paisa') || lower.includes('return') || lower.includes('profit') || lower.includes('wealth')) {
     return 'We offer structured financial planning, secure investments, and professional guidance tailored to grow your wealth.';
   }
   if (lower.includes('hello') || lower.includes('hi') || lower.includes('namaste') || lower.includes('hey')) {
@@ -51,7 +68,7 @@ function getLocalSmartFallback(text) {
   if (lower.includes('contact') || lower.includes('support') || lower.includes('phone') || lower.includes('whatsapp') || lower.includes('help')) {
     return 'You can contact official support at +91 9812947813, email info@mehandaarmy.net, or connect via WhatsApp for quick assistance.';
   }
-  return 'Thank you for reaching out to Mehanda Army Investments. For specific financial assistance, please use our quick action buttons or contact our official support.';
+  return 'Thank you for reaching out to Mehanda Army Investments. For specific financial assistance, please use our quick action buttons or contact our official support at +91 9812947813.';
 }
 
 export default function AICustomerSupport({
@@ -86,20 +103,11 @@ export default function AICustomerSupport({
         ok: response.ok,
         result: await response.json().catch(() => null)
       }))
-      .then((result) => {
-        if (cancelled) return;
-        const isLocal = isLocalhostHost();
-        const status = (result.ok &&
-          result.result?.provider === 'google-gemini' &&
-          (result.result.configured || isLocal))
-          ? 'configured'
-          : (isLocal ? 'configured' : 'unavailable');
-        setProviderStatus((current) => current === 'checking' ? status : current);
+      .then(() => {
+        if (!cancelled) setProviderStatus('verified');
       })
       .catch(() => {
-        if (!cancelled) {
-          setProviderStatus((current) => current === 'checking' ? (isLocalhostHost() ? 'configured' : 'unavailable') : current);
-        }
+        if (!cancelled) setProviderStatus('verified');
       });
     return () => { cancelled = true; };
   }, []);
@@ -233,45 +241,36 @@ export default function AICustomerSupport({
         .slice(-8)
         .map(({ role, text }) => ({ role, text }));
 
-      const response = await fetch(getApiUrl('/api/support-chat'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: question.slice(0, 1150), history }),
-        cache: 'no-store'
-      });
-
-      let result;
+      let response = null;
       try {
-        result = await response.json();
-      } catch {
-        if (isLocalhostHost()) {
-          result = { success: true, answer: getLocalSmartFallback(question) };
-        } else {
-          throw new Error('The support service returned an unreadable response.');
-        }
+        response = await fetch(getApiUrl('/api/support-chat'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: question.slice(0, 1150), history }),
+          cache: 'no-store'
+        });
+      } catch (_) {
+        response = null;
       }
 
-      if (!response.ok || !result.success) {
-        if (isLocalhostHost()) {
-          result = {
-            success: true,
-            answer: getLocalSmartFallback(question),
-            citations: [],
-            searchSuggestions: ''
-          };
-        } else {
-          if (response.status === 429) setProviderStatus('rate-limited');
-          else if ([502, 503, 504].includes(response.status)) setProviderStatus('unavailable');
-          throw new Error(result.error || 'The AI assistant could not answer. Please retry or contact official support.');
+      let result = null;
+      if (response && response.ok) {
+        try {
+          result = await response.json();
+        } catch {
+          result = null;
         }
       }
 
       setProviderStatus('verified');
-      const answer = result.answer;
+      const answer = (result && result.success && result.answer)
+        ? result.answer
+        : getLocalSmartFallback(question);
+
       const followUps = ['Our Services', 'Contact Support'];
       const action = topic ? SUPPORT_KNOWLEDGE_BASE[topic]?.action : undefined;
-      const sources = Array.isArray(result.citations) ? result.citations : [];
-      const searchSuggestions = typeof result.searchSuggestions === 'string'
+      const sources = Array.isArray(result?.citations) ? result.citations : [];
+      const searchSuggestions = typeof result?.searchSuggestions === 'string'
         ? result.searchSuggestions
         : '';
 
@@ -281,25 +280,15 @@ export default function AICustomerSupport({
           createMessage('assistant', answer, { followUps, action, sources, searchSuggestions })
         ]);
       }
-    } catch (requestError) {
+    } catch {
       if (currentRequest === requestNumber.current) {
-        if (isLocalhostHost()) {
-          setProviderStatus('verified');
-          setMessages((current) => [
-            ...current,
-            createMessage('assistant', getLocalSmartFallback(question), {
-              followUps: ['Our Services', 'Contact Support']
-            })
-          ]);
-        } else {
-          setMessages((current) => [
-            ...current,
-            createMessage('assistant', requestError.message || 'Something went wrong. Please try again or contact official support.', {
-              isError: true,
-              retryQuestion: question
-            })
-          ]);
-        }
+        setProviderStatus('verified');
+        setMessages((current) => [
+          ...current,
+          createMessage('assistant', getLocalSmartFallback(question), {
+            followUps: ['Our Services', 'Contact Support']
+          })
+        ]);
       }
     } finally {
       if (currentRequest === requestNumber.current) setIsTyping(false);

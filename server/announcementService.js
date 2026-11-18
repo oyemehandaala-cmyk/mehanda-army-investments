@@ -520,68 +520,72 @@ export async function handleSendAnnouncement({ body = {}, headers = {}, env = pr
   let failedCount = 0;
   const recipientResults = [];
 
-  // Deliver real emails
-  for (const recipientEmail of targetEmails) {
-    const html = buildAnnouncementEmailHtml({
-      subject: subject.trim(),
-      title: title.trim(),
-      message: message.trim(),
-      imageUrl,
-      imagePosition,
-      ctaText: ctaText.trim(),
-      ctaUrl: ctaUrl.trim(),
-      recipientEmail,
-    });
-    const text = buildAnnouncementEmailText({
-      title: title.trim(),
-      message: message.trim(),
-      ctaText: ctaText.trim(),
-      ctaUrl: ctaUrl.trim(),
-    });
-
-    try {
-      const res = await deliverEmailMessage({
-        to: recipientEmail,
+  // Deliver real emails concurrently in safe batches
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < targetEmails.length; i += BATCH_SIZE) {
+    const chunk = targetEmails.slice(i, i + BATCH_SIZE);
+    await Promise.allSettled(chunk.map(async (recipientEmail) => {
+      const html = buildAnnouncementEmailHtml({
         subject: subject.trim(),
-        html,
-        text,
-        env,
+        title: title.trim(),
+        message: message.trim(),
+        imageUrl,
+        imagePosition,
+        ctaText: ctaText.trim(),
+        ctaUrl: ctaUrl.trim(),
+        recipientEmail,
+      });
+      const text = buildAnnouncementEmailText({
+        title: title.trim(),
+        message: message.trim(),
+        ctaText: ctaText.trim(),
+        ctaUrl: ctaUrl.trim(),
       });
 
-      sentCount++;
-      recipientResults.push({
-        email: recipientEmail,
-        status: 'sent',
-        provider: res?.provider || 'smtp',
-      });
+      try {
+        const res = await deliverEmailMessage({
+          to: recipientEmail,
+          subject: subject.trim(),
+          html,
+          text,
+          env,
+        });
 
-      // Log recipient delivery to DB
-      if (dbRecordCreated) {
-        serviceClient.from('email_announcement_recipients').insert({
-          announcement_id: announcementId,
-          recipient_email: recipientEmail,
+        sentCount++;
+        recipientResults.push({
+          email: recipientEmail,
           status: 'sent',
           provider: res?.provider || 'smtp',
-        }).catch(() => {});
-      }
-    } catch (deliveryError) {
-      failedCount++;
-      const errMsg = deliveryError.message || 'Delivery failed';
-      recipientResults.push({
-        email: recipientEmail,
-        status: 'failed',
-        error: errMsg,
-      });
+        });
 
-      if (dbRecordCreated) {
-        serviceClient.from('email_announcement_recipients').insert({
-          announcement_id: announcementId,
-          recipient_email: recipientEmail,
+        // Log recipient delivery to DB
+        if (dbRecordCreated) {
+          serviceClient.from('email_announcement_recipients').insert({
+            announcement_id: announcementId,
+            recipient_email: recipientEmail,
+            status: 'sent',
+            provider: res?.provider || 'smtp',
+          }).catch(() => {});
+        }
+      } catch (deliveryError) {
+        failedCount++;
+        const errMsg = deliveryError.message || 'Delivery failed';
+        recipientResults.push({
+          email: recipientEmail,
           status: 'failed',
-          error_message: errMsg,
-        }).catch(() => {});
+          error: errMsg,
+        });
+
+        if (dbRecordCreated) {
+          serviceClient.from('email_announcement_recipients').insert({
+            announcement_id: announcementId,
+            recipient_email: recipientEmail,
+            status: 'failed',
+            error_message: errMsg,
+          }).catch(() => {});
+        }
       }
-    }
+    }));
   }
 
   const finalStatus = failedCount === 0 ? 'Sent' : (sentCount === 0 ? 'Failed' : 'Partial');

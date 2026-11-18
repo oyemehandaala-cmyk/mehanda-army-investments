@@ -87,6 +87,17 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // Ensure req.query is populated from URL parameters
+  if (req.url) {
+    try {
+      const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      if (!req.query) req.query = {};
+      for (const [k, v] of parsed.searchParams.entries()) {
+        if (req.query[k] === undefined) req.query[k] = v;
+      }
+    } catch (_) {}
+  }
+
   // Parse target route name
   let routeName = '';
   if (req.query?.path) {
@@ -97,6 +108,11 @@ export default async function handler(req, res) {
     const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     routeName = parsed.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '');
   }
+
+  if (routeName.includes('?')) {
+    routeName = routeName.split('?')[0];
+  }
+  routeName = routeName.replace(/^api\/?/, '');
 
   // Handle root /api health check
   if (!routeName || routeName === '') {

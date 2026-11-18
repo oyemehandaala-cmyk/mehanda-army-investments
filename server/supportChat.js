@@ -18,8 +18,8 @@ class GeminiProviderError extends Error {
 
 function getProviderConfig() {
   return {
-    apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+    apiKey: process.env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env?.VITE_GEMINI_API_KEY) || '',
+    model: process.env.GEMINI_MODEL || 'gemini-3.5-flash'
   };
 }
 
@@ -63,6 +63,23 @@ export function getSmartFallbackResponse(text = '') {
   if (lower.includes('payment') || lower.includes('receipt') || lower.includes('pay') || lower.includes('upi') || lower.includes('card')) {
     return 'You can view payment status and download receipts directly in our Payment Centre. For security, never share UPI PIN or card credentials.';
   }
+
+  // Check against SUPPORT_KNOWLEDGE_BASE for additional topics
+  try {
+    for (const item of Object.values(SUPPORT_KNOWLEDGE_BASE)) {
+      if (Array.isArray(item.keywords)) {
+        const matched = item.keywords.some((kw) => lower.includes(kw.toLowerCase()));
+        if (matched) {
+          const isHindi = /[\u0900-\u097F]/.test(text) || /\b(kaise|karo|batao|kya|chahiye|kime|kare|hoga|bhai|dost|bhi)\b/i.test(lower);
+          if (isHindi && item.answerHi) {
+            return item.answerHi;
+          }
+          return item.answer || item.answerHi;
+        }
+      }
+    }
+  } catch (_) {}
+
   return 'Thank you for reaching out to Mehanda Army Investments. For specific financial assistance, please use our quick action buttons or contact our official support.';
 }
 
