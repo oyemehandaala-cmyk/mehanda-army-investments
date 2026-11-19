@@ -2873,6 +2873,11 @@ function AdminPortalInner({ setCurrentView }) {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pendingProtectedTab, setPendingProtectedTab] = useState('security');
   const [pinInput, setPinInput] = useState('');
+
+  // Registered Customer Directory State
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [copiedCustomerEmail, setCopiedCustomerEmail] = useState('');
   const [pinAttempts, setPinAttempts] = useState(0);
   const [pinLockoutUntil, setPinLockoutUntil] = useState(0);
   const [pinError, setPinError] = useState('');
@@ -2982,6 +2987,9 @@ function AdminPortalInner({ setCurrentView }) {
     setDashboard(data);
     try {
       const studentApps = await getStudentLoanTestApplications().catch(() => []);
+      const sourceStudentApps = (Array.isArray(studentApps) && studentApps.length > 0)
+        ? studentApps
+        : (data?.studentLoanRecords || []);
       const farmLoans = (data?.farmLoanRecords || []).map((f) => ({
         ...f,
         refNumber: f.refNumber || f.reference || f.trackingId,
@@ -2993,13 +3001,32 @@ function AdminPortalInner({ setCurrentView }) {
         applicantName: f.applicantName || f.applicant_name,
         applicantEmail: f.applicantEmail || f.applicant_email,
         applicantPhone: f.applicantPhone || f.applicant_phone,
+        applicantState: f.applicantState || f.applicant_state,
+        applicantDistrict: f.applicantDistrict || f.applicant_district,
+        applicantCity: f.applicantCity || f.applicant_city,
         submittedAt: f.submittedAt || f.submitted_at,
         rawRecord: f,
       }));
-      const taggedStudentApps = (studentApps || []).map((s) => ({
+      const taggedStudentApps = (sourceStudentApps || []).map((s) => ({
         ...s,
+        refNumber: s.refNumber || s.reference || s.trackingId,
+        trackingId: s.trackingId || s.tracking_id,
         loanCategory: 'student_loan',
         categoryLabel: 'Student Loan',
+        loanAmount: s.loanAmount || s.loan_amount,
+        status: s.status || s.enquiry_status || s.enquiryStatus || 'Submitted',
+        applicantName: s.applicantName || s.applicant_name,
+        applicantEmail: s.applicantEmail || s.applicant_email,
+        applicantPhone: s.applicantPhone || s.applicant_phone,
+        applicantState: s.applicantState || s.applicant_state,
+        applicantDistrict: s.applicantDistrict || s.applicant_district,
+        applicantCity: s.applicantCity || s.applicant_city,
+        applicantAddress: s.applicantAddress || s.applicant_address,
+        institutionName: s.institutionName || s.institution_name || s.school_name,
+        courseName: s.courseName || s.course_name,
+        documents: s.documents,
+        submittedAt: s.submittedAt || s.submitted_at || s.createdAt || s.created_at,
+        rawRecord: s,
       }));
       const mergedLoans = [...taggedStudentApps, ...farmLoans].sort(
         (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
@@ -3760,40 +3787,64 @@ function AdminPortalInner({ setCurrentView }) {
     }
   };
 
-  // Aggregate All Applications data
+  // Aggregate All Applications data (Deduplicated & Unified)
   const allSubmissions = useMemo(() => {
-    const loanItems = (loanApplications || []).map((app) => {
-      const cat = app.loanCategory || (app.trackingId?.startsWith('MAI-SL') ? 'student_loan' : 'student_loan');
-      const label = cat === 'dairy_loan' ? 'Dairy Loan' : cat === 'sheep_loan' ? 'Sheep Loan' : cat === 'goat_loan' ? 'Goat Loan' : 'Student Loan';
-      return {
-        id: app.refNumber || app.trackingId || app.id,
-        userId: app.userId || app.applicantUserId || app.user_id || app.rawRecord?.user_id || null,
-        rawRecord: app,
-        formType: cat,
-        loanCategory: cat,
-        formTypeLabel: label,
-        trackingRef: app.trackingId,
-        customerName: app.applicantName,
-        email: app.applicantEmail,
-        phone: app.applicantPhone,
-        isEmailVerified: app.isEmailVerified,
-        amount: app.loanAmount ? `₹${Number(app.loanAmount).toLocaleString('en-IN')}` : '₹1,000',
-        status: app.status || 'Submitted',
-        createdAt: app.submittedAt,
-        updatedAt: app.updatedAt || app.submittedAt,
-        documents: app.documents,
-        documentMetadata: app.documentMetadata || app.rawRecord?.documentMetadata || null,
-        enquiryPurpose: app.enquiryPurpose || app.rawRecord?.enquiry_purpose || null,
-        farmingDetails: app.farmingDetails,
-      };
+    const itemMap = new Map();
+
+    // 1. Seed from dashboard allSubmissions (server unified records)
+    (dashboard?.allSubmissions || []).forEach((s) => {
+      const key = s.trackingRef || s.id;
+      if (key) {
+        itemMap.set(key, {
+          ...s,
+          formTypeLabel: s.formType === 'investment'
+            ? 'Investment'
+            : s.formType === 'student_loan'
+              ? 'Student Loan'
+              : s.formType === 'dairy_loan'
+                ? 'Dairy Loan'
+                : s.formType === 'sheep_loan'
+                  ? 'Sheep Loan'
+                  : s.formType === 'goat_loan'
+                    ? 'Goat Loan'
+                    : 'Contact / Callback',
+        });
+      }
     });
 
-    const otherItems = (dashboard?.allSubmissions || []).map((s) => ({
-      ...s,
-      formTypeLabel: s.formType === 'investment' ? 'Investment' : s.formType === 'student_loan' ? 'Student Loan' : 'Contact / Callback',
-    }));
+    // 2. Augment with loanApplications
+    (loanApplications || []).forEach((app) => {
+      const key = app.trackingId || app.refNumber || app.id;
+      if (key) {
+        const cat = app.loanCategory || 'student_loan';
+        const label = cat === 'dairy_loan' ? 'Dairy Loan' : cat === 'sheep_loan' ? 'Sheep Loan' : cat === 'goat_loan' ? 'Goat Loan' : 'Student Loan';
+        const existing = itemMap.get(key);
+        itemMap.set(key, {
+          ...existing,
+          id: app.refNumber || app.trackingId || app.id,
+          userId: app.userId || app.applicantUserId || app.user_id || app.rawRecord?.user_id || existing?.userId || null,
+          rawRecord: app.rawRecord || app,
+          formType: cat,
+          loanCategory: cat,
+          formTypeLabel: label,
+          trackingRef: app.trackingId || existing?.trackingRef,
+          customerName: app.applicantName || existing?.customerName,
+          email: app.applicantEmail || existing?.email,
+          phone: app.applicantPhone || existing?.phone,
+          isEmailVerified: app.isEmailVerified ?? existing?.isEmailVerified,
+          amount: app.loanAmount ? `₹${Number(app.loanAmount).toLocaleString('en-IN')}` : (existing?.amount || '₹1,000'),
+          status: app.status || existing?.status || 'Submitted',
+          createdAt: app.submittedAt || existing?.createdAt,
+          updatedAt: app.updatedAt || app.submittedAt || existing?.updatedAt,
+          documents: app.documents || existing?.documents,
+          documentMetadata: app.documentMetadata || app.rawRecord?.documentMetadata || existing?.documentMetadata || null,
+          enquiryPurpose: app.enquiryPurpose || app.rawRecord?.enquiry_purpose || existing?.enquiryPurpose || null,
+          farmingDetails: app.farmingDetails || existing?.farmingDetails,
+        });
+      }
+    });
 
-    return [...otherItems, ...loanItems].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return Array.from(itemMap.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }, [dashboard?.allSubmissions, loanApplications]);
 
   // Filter & Paginate Submissions
@@ -5814,56 +5865,250 @@ function AdminPortalInner({ setCurrentView }) {
               )}
 
               {/* ============================================================== */}
-              {/* TAB 6: REGISTERED CUSTOMERS */}
+              {/* TAB 6: REGISTERED CUSTOMERS & ACCOUNT ACTIVITY */}
               {/* ============================================================== */}
-              {activeTab === 'customers' && (
-                <div className="space-y-5">
-                  <div>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Registered Customers</h2>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      Profiles and authenticated user accounts stored in Supabase Auth and database tables.
-                    </p>
-                  </div>
+              {activeTab === 'customers' && (() => {
+                const customersList = dashboard?.customers || [];
+                const filteredCustomers = customersList.filter((c) => {
+                  if (!customerSearch.trim()) return true;
+                  const query = customerSearch.trim().toLowerCase();
+                  return (
+                    (c.name || '').toLowerCase().includes(query) ||
+                    (c.contactEmail || '').toLowerCase().includes(query) ||
+                    (c.emailMasked || '').toLowerCase().includes(query) ||
+                    (c.phone || '').toLowerCase().includes(query) ||
+                    (c.id || '').toLowerCase().includes(query) ||
+                    (c.providerLabel || '').toLowerCase().includes(query)
+                  );
+                });
 
-                  <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-                    {(dashboard?.customers || []).length === 0 ? (
-                      <EmptyState title="No customer profiles" message="No registered accounts in the Supabase database." />
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs min-w-[700px]">
-                          <thead className="bg-slate-50/75 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                            <tr>
-                              <th className="py-3 px-5">Customer</th>
-                              <th className="py-3 px-4">Masked Email</th>
-                              <th className="py-3 px-4">Account Status</th>
-                              <th className="py-3 px-5 text-right">Registered On</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {(dashboard?.customers || []).map((c) => (
-                              <tr key={c.id} className="hover:bg-slate-50/70 transition">
-                                <td className="py-3.5 px-5">
-                                  <div className="flex items-center gap-3">
-                                    <Avatar name={c.name} email={c.emailMasked} size="sm" />
-                                    <span className="font-bold text-slate-900">{c.name || 'Registered User'}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3.5 px-4 font-mono text-slate-600">{c.emailMasked}</td>
-                                <td className="py-3.5 px-4">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                                    {c.accountStatus?.replaceAll('_', ' ') || 'Active'}
-                                  </span>
-                                </td>
-                                <td className="py-3.5 px-5 text-right text-slate-500">{formatDate(c.createdAt)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                const totalCount = customersList.length;
+                const activeCount = customersList.filter((c) => c.accountStatus === 'active' || c.lastSignInAt).length;
+                const googleCount = customersList.filter((c) => c.provider === 'google').length;
+                const withFormsCount = customersList.filter((c) => (c.formsCount || 0) > 0).length;
+
+                return (
+                  <div className="space-y-6">
+                    {/* Header & Controls */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-black text-slate-900 tracking-tight">Registered Customers & Account Activity</h2>
+                          <span className="rounded-full bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-0.5 border border-purple-200">
+                            {totalCount} Total Accounts
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 max-w-2xl">
+                          Live customer accounts stored in Supabase Auth & Database. Monitor registrations, Google / Email OTP sign-ins, exact last login timestamps, and all submitted loan & investment applications.
+                        </p>
                       </div>
-                    )}
+
+                      {/* Search Bar */}
+                      <div className="relative min-w-[260px] max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                        <input
+                          type="text"
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          placeholder="Search by name, email, or phone..."
+                          className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition outline-none"
+                        />
+                        {customerSearch && (
+                          <button
+                            onClick={() => setCustomerSearch('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Quick Metrics Bar */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Users</span>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-slate-900">{totalCount}</span>
+                          <span className="text-xs text-slate-500">Registered</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 shadow-2xs">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Active Accounts</span>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-emerald-800">{activeCount}</span>
+                          <span className="text-xs text-emerald-600">Verified</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 shadow-2xs">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Google Auth</span>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-blue-800">{googleCount}</span>
+                          <span className="text-xs text-blue-600">One-Tap Login</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3.5 shadow-2xs">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700">Applied for Forms</span>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-purple-800">{withFormsCount}</span>
+                          <span className="text-xs text-purple-600">Active Applicants</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Table Container */}
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+                      {filteredCustomers.length === 0 ? (
+                        <EmptyState
+                          title={customerSearch ? 'No matching customers' : 'No customer accounts'}
+                          message={customerSearch ? `No accounts match "${customerSearch}".` : 'No registered accounts in Supabase database.'}
+                          icon={Users}
+                        />
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs min-w-[950px]">
+                            <thead className="bg-slate-50/75 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                              <tr>
+                                <th className="py-3 px-5">Customer Account</th>
+                                <th className="py-3 px-4">Contact Email</th>
+                                <th className="py-3 px-4">Phone</th>
+                                <th className="py-3 px-4">Auth Method</th>
+                                <th className="py-3 px-4">Registered On</th>
+                                <th className="py-3 px-4">Last Login</th>
+                                <th className="py-3 px-4 text-center">Forms Applied</th>
+                                <th className="py-3 px-5 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {filteredCustomers.map((c) => {
+                                const realEmail = c.contactEmail || c.email || c.emailMasked || 'No Email';
+                                const hasRecentLogin = Boolean(c.lastSignInAt);
+                                const isGoogle = c.provider === 'google';
+
+                                return (
+                                  <tr key={c.id} className="hover:bg-slate-50/70 transition">
+                                    {/* Customer Name & Avatar */}
+                                    <td className="py-3.5 px-5">
+                                      <div className="flex items-center gap-3">
+                                        <Avatar name={c.name} email={c.emailMasked || realEmail} size="sm" />
+                                        <div>
+                                          <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                            <span>{c.name || 'Customer'}</span>
+                                            {c.accountStatus === 'active' && (
+                                              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" title="Active Account" />
+                                            )}
+                                          </div>
+                                          <span className="font-mono text-[10px] text-slate-400">ID: {c.id?.slice(0, 8)}...</span>
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    {/* Contact Email with Copy Button */}
+                                    <td className="py-3.5 px-4">
+                                      <div className="flex items-center gap-1.5 font-mono text-slate-700">
+                                        <span className="font-medium">{realEmail}</span>
+                                        {realEmail !== 'No Email' && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              navigator.clipboard?.writeText(realEmail);
+                                              setCopiedCustomerEmail(realEmail);
+                                              setTimeout(() => setCopiedCustomerEmail(''), 2000);
+                                            }}
+                                            className="text-slate-400 hover:text-purple-600 p-0.5 rounded transition"
+                                            title="Copy Email"
+                                          >
+                                            {copiedCustomerEmail === realEmail ? (
+                                              <span className="text-[10px] font-bold text-emerald-600">Copied!</span>
+                                            ) : (
+                                              <Copy size={13} />
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+
+                                    {/* Phone Number */}
+                                    <td className="py-3.5 px-4 font-mono text-slate-600">
+                                      {c.phone ? (
+                                        <span className="font-semibold text-slate-800">{c.phone}</span>
+                                      ) : (
+                                        <span className="text-slate-400 italic">Not provided</span>
+                                      )}
+                                    </td>
+
+                                    {/* Auth Method */}
+                                    <td className="py-3.5 px-4">
+                                      {isGoogle ? (
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 border border-blue-200">
+                                          <Globe size={12} className="text-blue-500" />
+                                          Google Sign-In
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 border border-purple-200">
+                                          <Mail size={12} className="text-purple-500" />
+                                          Email & OTP
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Account Created Date */}
+                                    <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                                      {formatDate(c.createdAt)}
+                                    </td>
+
+                                    {/* Last Login Date & Time */}
+                                    <td className="py-3.5 px-4 whitespace-nowrap">
+                                      {hasRecentLogin ? (
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                          <span className="font-medium text-emerald-800">{formatDate(c.lastSignInAt)}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-slate-400 italic">Registered (No relogin)</span>
+                                      )}
+                                    </td>
+
+                                    {/* Forms Applied */}
+                                    <td className="py-3.5 px-4 text-center">
+                                      {(c.formsCount || 0) > 0 ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => setSelectedCustomer(c)}
+                                          className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-300 transition cursor-pointer shadow-2xs"
+                                        >
+                                          <FileCheck size={13} className="text-emerald-600" />
+                                          <span>{c.formsCount} {c.formsCount === 1 ? 'Form' : 'Forms'}</span>
+                                        </button>
+                                      ) : (
+                                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-400">
+                                          0 Forms
+                                        </span>
+                                      )}
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="py-3.5 px-5 text-right">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedCustomer(c)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 hover:bg-purple-50 hover:text-purple-700 px-3 py-1.5 text-xs font-bold text-slate-700 border border-slate-200 hover:border-purple-200 transition"
+                                      >
+                                        <Eye size={13} />
+                                        <span>Details</span>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* ============================================================== */}
               {/* TAB 7: SERVICE FEES */}
@@ -7135,6 +7380,149 @@ function AdminPortalInner({ setCurrentView }) {
             }
           }}
         />
+      )}
+
+      {/* CUSTOMER PROFILE & SUBMISSIONS HISTORY MODAL */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl rounded-3xl bg-white border border-slate-200 text-slate-900 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/75">
+              <div className="flex items-center gap-3">
+                <Avatar name={selectedCustomer.name} email={selectedCustomer.contactEmail || selectedCustomer.emailMasked} size="md" />
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{selectedCustomer.name || 'Customer Profile'}</h3>
+                  <p className="text-xs text-slate-500 font-mono">User ID: {selectedCustomer.id}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCustomer(null)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-200 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6 overflow-y-auto">
+              {/* Account Quick Facts */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Real Contact Email</span>
+                  <div className="mt-1 font-mono text-xs font-bold text-slate-800 break-all">
+                    {selectedCustomer.contactEmail || selectedCustomer.emailMasked || 'Not provided'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone Number</span>
+                  <div className="mt-1 font-mono text-xs font-bold text-slate-800">
+                    {selectedCustomer.phone || 'Not provided'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Auth Method</span>
+                  <div className="mt-1 text-xs font-bold text-slate-800">
+                    {selectedCustomer.provider === 'google' ? 'Google Sign-In' : 'Email & OTP'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Account Created</span>
+                  <div className="mt-1 text-xs text-slate-700">
+                    {formatDate(selectedCustomer.createdAt)}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Last Login Timestamp</span>
+                  <div className="mt-1 text-xs font-semibold text-emerald-700">
+                    {selectedCustomer.lastSignInAt ? formatDate(selectedCustomer.lastSignInAt) : 'Initial Registration'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">Total Applications</span>
+                  <div className="mt-1 text-xs font-black text-purple-800">
+                    {selectedCustomer.formsCount || 0} Submitted Forms
+                  </div>
+                </div>
+              </div>
+
+              {/* Submissions Section */}
+              <div>
+                <h4 className="text-sm font-black text-slate-900 tracking-tight mb-3 flex items-center justify-between">
+                  <span>Applications & Enquiries Submitted ({selectedCustomer.formsCount || 0})</span>
+                </h4>
+
+                {(selectedCustomer.appliedForms || []).length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500 bg-slate-50/50">
+                    This customer has not submitted any loan or investment applications yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {selectedCustomer.appliedForms.map((form, idx) => {
+                      const matchingApp = allSubmissions.find(
+                        (s) => s.trackingRef === form.trackingRef || s.id === form.id || s.trackingRef === form.id
+                      );
+
+                      return (
+                        <div
+                          key={form.trackingRef || form.id || idx}
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200 bg-white hover:border-purple-300 transition shadow-2xs"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+                              <FileText size={18} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-xs text-slate-900">{form.formTypeLabel || form.formType}</span>
+                                <span className="font-mono text-[11px] text-slate-500">({form.trackingRef || form.id})</span>
+                              </div>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                                <span>Amount: <strong className="text-slate-800">{form.amount ? (String(form.amount).startsWith('₹') ? form.amount : `₹${form.amount}`) : '—'}</strong></span>
+                                <span>•</span>
+                                <span>Submitted: {formatDate(form.createdAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                              {form.status || 'Submitted'}
+                            </span>
+                            {matchingApp && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCustomer(null);
+                                  setDetailApp(matchingApp);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1 text-xs font-bold transition shadow-xs"
+                              >
+                                <span>View App</span>
+                                <ExternalLink size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setSelectedCustomer(null)}
+                className="rounded-xl bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 text-xs font-bold transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* CONFIRM DELETE / ARCHIVE MODAL */}

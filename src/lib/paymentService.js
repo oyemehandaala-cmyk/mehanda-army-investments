@@ -265,9 +265,10 @@ export function base64UrlFromBuffer(buffer) {
 }
 
 export async function getPasskeyLoginOptions() {
+  const clientRpId = getClientRpId();
   return adminRequest('/api/admin-passkey', {
     method: 'POST',
-    body: JSON.stringify({ action: 'login-options' }),
+    body: JSON.stringify({ action: 'login-options', clientRpId }),
   });
 }
 
@@ -275,7 +276,6 @@ export function getClientRpId(fallbackId) {
   if (typeof window === 'undefined') return fallbackId || 'mehandaarmy.net';
   const host = window.location.hostname.toLowerCase();
   if (host === 'localhost' || host === '127.0.0.1') return 'localhost';
-  if (host.endsWith('mehandaarmy.net')) return 'mehandaarmy.net';
   return host;
 }
 
@@ -334,9 +334,10 @@ export async function authenticateWithPasskey() {
 }
 
 export async function getPasskeyRegisterOptions() {
+  const clientRpId = getClientRpId();
   return adminRequest('/api/admin-passkey', {
     method: 'POST',
-    body: JSON.stringify({ action: 'register-options' }),
+    body: JSON.stringify({ action: 'register-options', clientRpId }),
   });
 }
 
@@ -408,9 +409,10 @@ export async function enrollFirstTimePasskey({ enrollmentToken, deviceToken, dev
     throw new Error('Biometric passkeys are not supported on this browser or device.');
   }
 
+  const clientRpId = getClientRpId();
   const { options } = await adminRequest('/api/admin-passkey', {
     method: 'POST',
-    body: JSON.stringify({ action: 'enroll-options', enrollmentToken }),
+    body: JSON.stringify({ action: 'enroll-options', enrollmentToken, clientRpId }),
   });
 
   const effectiveRpId = getClientRpId(options.rp?.id);

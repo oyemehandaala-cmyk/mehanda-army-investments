@@ -45,7 +45,7 @@ export async function getAdminDashboardData(
     activityResult,
   ] = await Promise.all([
     client.from('profiles')
-      .select('id,full_name,email,account_status,created_at', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .limit(500),
     client.from('service_payments')
@@ -76,6 +76,19 @@ export async function getAdminDashboardData(
       .order('created_at', { ascending: false })
       .limit(100),
   ]);
+
+  // Retrieve auth.users if admin auth service client is available
+  let authUsers = [];
+  try {
+    if (client.auth?.admin?.listUsers && typeof client.auth.admin.listUsers === 'function') {
+      const listRes = await client.auth.admin.listUsers().catch(() => null);
+      if (Array.isArray(listRes?.data?.users)) {
+        authUsers = listRes.data.users;
+      }
+    }
+  } catch (authUsersErr) {
+    console.warn('[admin-dashboard] listUsers warning:', authUsersErr?.message);
+  }
 
   const profiles = requireRows(profileResult, 'profiles');
   const payments = requireRows(paymentResult, 'service_payments');
@@ -209,9 +222,105 @@ export async function getAdminDashboardData(
     },
   };
 
+  // Merge customer accounts from authUsers and profiles with activity & form details
+  const customerList = [];
+  const processedUserIds = new Set();
+
+  authUsers.forEach((u) => {
+    processedUserIds.add(u.id);
+    const prof = profiles.find((p) => p.id === u.id || (p.email && u.email && p.email.toLowerCase() === u.email.toLowerCase()));
+    const customerEmail = u.email || prof?.email || '';
+    const name = prof?.full_name || u.user_metadata?.full_name || u.user_metadata?.name || 'Customer';
+    const phone = prof?.contact_phone || prof?.phone || u.phone || u.user_metadata?.phone || '';
+    const provider = u.app_metadata?.provider || (prof?.auth_providers?.[0]) || 'email';
+    const providerLabel = provider === 'google' ? 'Google Sign-In' : 'Email & OTP';
+    const createdAt = u.created_at || prof?.created_at;
+    const lastSignInAt = u.last_sign_in_at || null;
+    const accountStatus = prof?.account_status || (u.confirmed_at ? 'active' : 'unconfirmed');
+
+    // Find all forms applied by this user
+    const userForms = allSubmissions.filter((sub) => {
+      const subEmail = String(sub.email || sub.verifiedEmail || '').trim().toLowerCase();
+      const subUserId = sub.userId || sub.rawRecord?.user_id;
+      return (u.id && subUserId === u.id) || (customerEmail && subEmail === customerEmail.toLowerCase());
+    });
+
+    customerList.push({
+      id: u.id,
+      name,
+      contactEmail: customerEmail,
+      emailMasked: maskEmail(customerEmail),
+      phone,
+      provider,
+      providerLabel,
+      accountStatus,
+      createdAt,
+      lastSignInAt,
+      formsCount: userForms.length,
+      appliedForms: userForms.map((f) => ({
+        id: f.id,
+        trackingRef: f.trackingRef,
+        formType: f.formType,
+        formTypeLabel: f.formTypeLabel,
+        status: f.status,
+        amount: f.amount || f.loanAmount,
+        createdAt: f.createdAt,
+      })),
+    });
+  });
+
+  profiles.forEach((p) => {
+    if (!processedUserIds.has(p.id)) {
+      processedUserIds.add(p.id);
+      const customerEmail = p.email || '';
+      const name = p.full_name || 'Customer';
+      const phone = p.contact_phone || p.phone || '';
+      const provider = (p.auth_providers?.[0]) || 'email';
+      const providerLabel = provider === 'google' ? 'Google Sign-In' : 'Email & OTP';
+      const createdAt = p.created_at;
+      const lastSignInAt = null;
+      const accountStatus = p.account_status || 'active';
+
+      const userForms = allSubmissions.filter((sub) => {
+        const subEmail = String(sub.email || sub.verifiedEmail || '').trim().toLowerCase();
+        const subUserId = sub.userId || sub.rawRecord?.user_id;
+        return (p.id && subUserId === p.id) || (customerEmail && subEmail === customerEmail.toLowerCase());
+      });
+
+      customerList.push({
+        id: p.id,
+        name,
+        contactEmail: customerEmail,
+        emailMasked: maskEmail(customerEmail),
+        phone,
+        provider,
+        providerLabel,
+        accountStatus,
+        createdAt,
+        lastSignInAt,
+        formsCount: userForms.length,
+        appliedForms: userForms.map((f) => ({
+          id: f.id,
+          trackingRef: f.trackingRef,
+          formType: f.formType,
+          formTypeLabel: f.formTypeLabel,
+          status: f.status,
+          amount: f.amount || f.loanAmount,
+          createdAt: f.createdAt,
+        })),
+      });
+    }
+  });
+
+  customerList.sort((a, b) => {
+    const timeA = new Date(a.lastSignInAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.lastSignInAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
   return {
     overview: {
-      customerCount: profileResult.count ?? profiles.length,
+      customerCount: profileResult.count ?? (customerList.length || profiles.length),
       serviceFeeRecordCount: paymentResult.count ?? payments.length,
       verifiedServiceFeeTotal: verifiedPayments.reduce((total, payment) => total + Number(payment.amount || 0), 0),
       investmentEnquiryCount: enquiryResult.count ?? enquiries.length,
@@ -226,13 +335,7 @@ export async function getAdminDashboardData(
     displayedRecordLimit: 500,
     submissionStats,
     allSubmissions,
-    customers: profiles.map((profile) => ({
-      id: profile.id.slice(0, 8),
-      name: profile.full_name || 'Customer',
-      emailMasked: maskEmail(profile.email),
-      accountStatus: profile.account_status || 'unknown',
-      createdAt: profile.created_at,
-    })),
+    customers: customerList,
     payments: payments.map((payment) => ({
       id: payment.id,
       receiptNumber: payment.receipt_number,
