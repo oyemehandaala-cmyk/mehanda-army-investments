@@ -7,6 +7,7 @@ Allow: /demo-dashboard
 Allow: /privacy
 Allow: /privacy-policy
 Allow: /terms-and-conditions
+Allow: /whatsapp
 
 # Disallow Private & Administrative Routes
 Disallow: /adminportal

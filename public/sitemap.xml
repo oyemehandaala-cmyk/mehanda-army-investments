@@ -59,4 +59,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- WhatsApp Business Direct Chat -->
+  <url>
+    <loc>https://mehandaarmy.net/whatsapp</loc>
+    <lastmod>2026-11-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
 </urlset>

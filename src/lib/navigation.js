@@ -17,6 +17,7 @@ const VIEW_PATHS = {
   'client-dashboard': '/dashboard',
   'admin-login': '/adminportal',
   'admin-dashboard': '/admin/dashboard',
+  'whatsapp-redirect': '/whatsapp',
 };
 
 const PATH_VIEWS = Object.fromEntries(
@@ -57,6 +58,9 @@ export function getViewFromLocation(location) {
   if (pathname === '/admin/dashboard') return 'admin-dashboard';
   if (pathname === '/privacy' || pathname === '/privacy-policy') return 'privacy-policy';
   if (pathname === '/terms' || pathname === '/terms-and-conditions') return 'terms-and-conditions';
+
+  // /whatsapp → instantly redirect to WhatsApp Business chat
+  if (pathname === '/whatsapp' || pathname === '/whatsapp/') return 'whatsapp-redirect';
 
   if (pathname === '/') {
     const authMode = searchParams.get('auth');
