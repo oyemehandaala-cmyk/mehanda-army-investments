@@ -19,7 +19,6 @@ import AdminPortal from './components/AdminPortal';
 import AICustomerSupport from './components/AICustomerSupport';
 import GoogleSignInWelcomePopup from './components/GoogleSignInWelcomePopup';
 import LoginRequiredScreen from './components/LoginRequiredScreen';
-import SessionReminder from './components/SessionReminder';
 import { authService, isSupabaseConfigured, toAuthenticatedUser } from './lib/supabaseClient';
 import {
   getHrefForView,
@@ -258,7 +257,6 @@ export default function App() {
           setAuthenticatedUser={setAuthenticatedUser}
         />
       )}
-      <SessionReminder />
     </>
   );
 
