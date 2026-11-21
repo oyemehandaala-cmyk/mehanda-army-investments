@@ -340,16 +340,16 @@ export default function Footer({ scrollTo, openLegalModal, setCurrentView }) {
         {/* ── 6. BOTTOM COPYRIGHT & SECURITY DISCLOSURE ── */}
         <div className="border-t border-white/[0.08] pt-6 sm:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-slate-500">
           <p className="text-center md:text-left">
-            &copy; {new Date().getFullYear()} <strong className="text-slate-300">MEHANDA ARMY INVESTMENTS</strong>. All rights reserved.
+            &copy; {new Date().getFullYear()} <strong className="text-slate-300">MEHANDA ARMY INVESTMENTS</strong> (Mehanda). Wholly owned &amp; operated by <strong className="text-slate-300">Deepak Jangra</strong>, Haryana, India. All rights reserved.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-[10px] sm:text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
               <ShieldCheck size={13} className="text-amber-400" />
-              Disciplined Wealth Management &amp; Client Fiduciary Focus
+              100% Genuine &amp; Zero Advance Fee Verified
             </span>
             <span className="hidden sm:inline text-slate-700">•</span>
-            <span className="text-slate-500">Made with pride in India 🇮🇳</span>
+            <span className="text-slate-500">Mehanda, Haryana, India 🇮🇳</span>
             <span className="hidden sm:inline text-slate-700">•</span>
             <button
               type="button"
