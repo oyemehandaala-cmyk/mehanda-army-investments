@@ -236,6 +236,27 @@ export default function App() {
       </div>
     );
   }
+
+  // /apk or /app → direct instant download of Mehanda Army APK
+  if (currentView === 'apk-download') {
+    if (typeof window !== 'undefined') {
+      window.location.replace('/MehandaArmy.apk');
+    }
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#081525', color: '#fff', padding: '2rem', fontFamily: 'sans-serif', textAlign: 'center' }}>
+        <div style={{ background: '#E5B652', borderRadius: '50%', width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', boxShadow: '0 4px 24px rgba(229,182,82,0.4)', color: '#081525', fontSize: '2rem' }}>
+          📱
+        </div>
+        <h2 style={{ color: '#E5B652', fontSize: '1.5rem', fontWeight: 800, marginBottom: '.5rem' }}>Mehanda Army Investments</h2>
+        <p style={{ color: '#cbd5e1', fontSize: '1rem', marginBottom: '1.5rem' }}>Official Android APK download ho raha hai…</p>
+        <a href="/MehandaArmy.apk" download="MehandaArmy.apk" style={{ background: '#E5B652', color: '#081525', borderRadius: 12, padding: '0.8rem 2.2rem', fontWeight: 800, fontSize: '1rem', textDecoration: 'none', boxShadow: '0 2px 14px rgba(229,182,82,0.5)' }}>
+          ⬇️ Download APK (1.1 MB)
+        </a>
+        <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '1.2rem' }}>Agar download apne aap shuru na ho, toh upar diye button par click karein.</p>
+        <a href="/" style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '1.5rem', textDecoration: 'underline' }}>← Back to Website</a>
+      </div>
+    );
+  }
   const pageWithAssistant = (page) => (
     <>
       {page}

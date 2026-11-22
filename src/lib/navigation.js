@@ -62,6 +62,9 @@ export function getViewFromLocation(location) {
   // /whatsapp → instantly redirect to WhatsApp Business chat
   if (pathname === '/whatsapp' || pathname === '/whatsapp/') return 'whatsapp-redirect';
 
+  // /apk or /app → direct APK download
+  if (pathname === '/apk' || pathname === '/apk/' || pathname === '/app' || pathname === '/app/') return 'apk-download';
+
   if (pathname === '/') {
     const authMode = searchParams.get('auth');
     if (authMode === 'reset-password') return 'auth-reset-password';

@@ -125,6 +125,18 @@
   status = 200
 
 [[redirects]]
+  from = "/apk"
+  to = "/MehandaArmy.apk"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/app"
+  to = "/MehandaArmy.apk"
+  status = 302
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
