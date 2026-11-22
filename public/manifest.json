@@ -3,13 +3,23 @@
   "name": "Mehanda Army Investments",
   "short_name": "Mehanda Army",
   "description": "Official App for Student Education Loans, Agri-Dairy Farm Loans, and Portfolio Planning.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#081525",
   "theme_color": "#081525",
   "orientation": "portrait",
-  "categories": ["finance", "business"],
+  "prefer_related_applications": false,
+  "categories": [
+    "finance",
+    "business"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -22,6 +32,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mehanda Army Investments Mobile App"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Mehanda Army Investments Portal"
     }
   ]
 }
