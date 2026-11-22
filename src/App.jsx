@@ -118,6 +118,20 @@ export default function App() {
     return () => window.removeEventListener('popstate', syncViewFromLocation);
   }, []);
 
+  // Standalone App Mode: When opened as an installed mobile app and not logged in,
+  // require login first before accessing features
+  useEffect(() => {
+    if (authLoading) return;
+    const isStandalone = typeof window !== 'undefined' && (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes('android-app://')
+    );
+    if (isStandalone && !authenticatedUser && currentView === 'home') {
+      setCurrentView('auth-login');
+    }
+  }, [authLoading, authenticatedUser, currentView, setCurrentView]);
+
   // A cached token is not treated as proof of identity; Supabase validates it.
   useEffect(() => {
     if (!isSupabaseConfigured()) {

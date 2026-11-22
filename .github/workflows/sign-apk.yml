@@ -1,0 +1,58 @@
+name: Sign Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/sign-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Sign APK with apksigner (v1, v2, v3 Signature)
+        run: |
+          set -e
+          echo "Finding apksigner..."
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+          echo "Using apksigner at: $APKSIGNER"
+
+          echo "Generating Keystore..."
+          keytool -genkey -v -keystore release.jks -alias mehanda \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass mehanda123 -keypass mehanda123 \
+            -dname "CN=Deepak Jangra, OU=Mehanda Army Investments, O=Mehanda Army, L=Hisar, ST=Haryana, C=IN"
+
+          echo "Signing public/MehandaArmy.apk..."
+          $APKSIGNER sign --ks release.jks --ks-pass pass:mehanda123 \
+            --ks-key-alias mehanda --key-pass pass:mehanda123 \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out public/MehandaArmy.apk public/MehandaArmy.apk
+
+          echo "Verifying APK Signature..."
+          $APKSIGNER verify --verbose public/MehandaArmy.apk
+
+      - name: Commit and Push Signed APK
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/MehandaArmy.apk
+          git commit -m "chore: digitally sign MehandaArmy.apk with v2/v3 Android certificates [skip ci]" || echo "No changes"
+          git push
