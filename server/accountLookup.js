@@ -177,6 +177,17 @@ export async function dispatchPasswordResetEmail({
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 
+  // Determine production redirect URL - NEVER allow localhost/127.0.0.1 in delivered email links
+  const canonicalRedirect = 'https://mehandaarmy.net/?auth=reset-password';
+  let targetRedirect = canonicalRedirect;
+  if (redirectTo && typeof redirectTo === 'string' && !redirectTo.includes('localhost') && !redirectTo.includes('127.0.0.1')) {
+    targetRedirect = redirectTo;
+  } else if (env.SITE_URL && !env.SITE_URL.includes('localhost') && !env.SITE_URL.includes('127.0.0.1')) {
+    targetRedirect = `${env.SITE_URL.replace(/\/$/, '')}/?auth=reset-password`;
+  } else if (env.VITE_SITE_URL && !env.VITE_SITE_URL.includes('localhost') && !env.VITE_SITE_URL.includes('127.0.0.1')) {
+    targetRedirect = `${env.VITE_SITE_URL.replace(/\/$/, '')}/?auth=reset-password`;
+  }
+
   // 2. Generate secure Supabase action link using Admin API
   let actionLink = null;
   try {
@@ -184,7 +195,7 @@ export async function dispatchPasswordResetEmail({
       type: 'recovery',
       email: cleanEmail,
       options: {
-        redirectTo: redirectTo || `${env.VITE_SITE_URL || 'http://localhost:3000'}/?auth=reset-password`,
+        redirectTo: targetRedirect,
       },
     });
 
@@ -200,6 +211,22 @@ export async function dispatchPasswordResetEmail({
 
   if (!actionLink) {
     return { success: false, status: 500, error: 'Could not generate password recovery link. Please try again.' };
+  }
+
+  // Ensure actionLink redirect_to points to live production domain and never localhost
+  if (typeof actionLink === 'string') {
+    try {
+      const parsedUrl = new URL(actionLink);
+      const currentRedirect = parsedUrl.searchParams.get('redirect_to');
+      if (!currentRedirect || currentRedirect.includes('localhost') || currentRedirect.includes('127.0.0.1')) {
+        parsedUrl.searchParams.set('redirect_to', targetRedirect);
+        actionLink = parsedUrl.toString();
+      }
+    } catch {
+      actionLink = actionLink
+        .replace(/redirect_to=https?%3A%2F%2Flocalhost(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`)
+        .replace(/redirect_to=https?%3A%2F%2F127\.0\.0\.1(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`);
+    }
   }
 
   // 3. Deliver email via our configured SMTP / Resend delivery engine

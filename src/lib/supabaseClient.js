@@ -89,6 +89,16 @@ export function toAuthenticatedUser(user) {
   };
 }
 
+export function getEmailActionRedirectUrl(authParam = 'reset-password') {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const origin = window.location.origin;
+    if (!origin.includes('localhost') && !origin.includes('127.0.0.1') && !origin.startsWith('android-app://')) {
+      return `${origin}/?auth=${authParam}`;
+    }
+  }
+  return `https://mehandaarmy.net/?auth=${authParam}`;
+}
+
 /**
  * Real Authentication API Layer with clear error reporting
  */
@@ -112,7 +122,7 @@ export const authService = {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/?auth=verify-email`,
+          emailRedirectTo: getEmailActionRedirectUrl('verify-email'),
           data: {
             full_name: fullName,
             phone: phone,
@@ -365,6 +375,7 @@ export const authService = {
     }
 
     const cleanEmail = String(email || '').trim().toLowerCase();
+    const targetRedirect = getEmailActionRedirectUrl('reset-password');
 
     // Verify account existence and dispatch recovery email via reliable server-side delivery
     try {
@@ -375,7 +386,7 @@ export const authService = {
           body: JSON.stringify({
             email: cleanEmail,
             action: 'request-reset',
-            redirectTo: `${window.location.origin}/?auth=reset-password`,
+            redirectTo: targetRedirect,
           }),
         });
         const resetData = await resetRes.json().catch(() => ({}));
@@ -405,7 +416,7 @@ export const authService = {
 
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/?auth=reset-password`,
+        redirectTo: targetRedirect,
       });
       return { data, error };
     } catch (err) {

@@ -248,23 +248,58 @@ test('6. dispatchPasswordResetEmail validates existence and sends recovery email
   assert.equal(resNotFound.status, 404);
   assert.match(resNotFound.error, /No account found with this email address/);
 
-  // B) Existing email -> dispatches recovery email successfully
+  // B) Existing email -> dispatches recovery email successfully and rewrites localhost redirect to production
   let delivered = false;
   let actionLinkCaptured = '';
+  let receivedRedirectOptions = null;
+  const mockClientWithLocalhostLink = {
+    from: () => ({
+      select: () => ({
+        ilike: () => ({
+          maybeSingle: async () => ({
+            data: { id: 'prof_verified', email: existingEmail },
+            error: null,
+          }),
+        }),
+      }),
+    }),
+    auth: {
+      admin: {
+        listUsers: async () => ({ data: { users: [] }, error: null }),
+        generateLink: async (options) => {
+          receivedRedirectOptions = options;
+          return {
+            data: {
+              properties: {
+                action_link: `https://test-project.supabase.co/auth/v1/verify?type=recovery&token=test_token_123&redirect_to=${encodeURIComponent('http://localhost:3000/?auth=reset-password')}`,
+              },
+            },
+            error: null,
+          };
+        },
+      },
+    },
+  };
+
   const resSuccess = await dispatchPasswordResetEmail({
     email: existingEmail,
+    redirectTo: 'http://localhost:3000/?auth=reset-password',
     env: dummyEnv,
-    createClient: () => mockClient,
+    createClient: () => mockClientWithLocalhostLink,
     deliverEmailFn: async ({ to, subject, html }) => {
       delivered = true;
       assert.equal(to, existingEmail);
       assert.match(subject, /Reset Your Password/);
       assert.match(html, /test_token_123/);
+      // Verify that localhost was stripped and replaced with mehandaarmy.net!
+      assert.doesNotMatch(html, /localhost:3000/);
+      assert.match(html, /mehandaarmy\.net/);
     },
   });
 
   assert.equal(resSuccess.success, true);
   assert.equal(resSuccess.status, 200);
   assert.equal(delivered, true);
+  assert.equal(receivedRedirectOptions?.options?.redirectTo, 'https://mehandaarmy.net/?auth=reset-password');
 });
 
