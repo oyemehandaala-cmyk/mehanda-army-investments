@@ -203,7 +203,22 @@ export async function dispatchPasswordResetEmail({
       console.error('[accountLookup] generateLink error:', linkErr.message);
       return { success: false, status: 500, error: linkErr.message || 'Could not generate recovery link.' };
     }
-    actionLink = linkData?.properties?.action_link;
+
+    // Direct production recovery link bypassing Supabase cloud GoTrue localhost redirect
+    const hashedToken = linkData?.properties?.hashed_token;
+    if (hashedToken) {
+      let baseOrigin = 'https://mehandaarmy.net';
+      if (redirectTo && typeof redirectTo === 'string' && !redirectTo.includes('localhost') && !redirectTo.includes('127.0.0.1')) {
+        try {
+          baseOrigin = new URL(redirectTo).origin;
+        } catch {
+          // keep production domain
+        }
+      }
+      actionLink = `${baseOrigin}/?auth=reset-password&token_hash=${encodeURIComponent(hashedToken)}&type=recovery`;
+    } else {
+      actionLink = linkData?.properties?.action_link;
+    }
   } catch (err) {
     console.error('[accountLookup] generateLink exception:', err.message);
     return { success: false, status: 500, error: err.message };

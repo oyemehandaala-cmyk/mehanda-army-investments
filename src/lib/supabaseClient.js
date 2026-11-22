@@ -424,6 +424,14 @@ export const authService = {
     }
   },
 
+  // Verify OTP or token_hash (e.g. from password recovery email link)
+  async verifyOtp({ token_hash, type = 'recovery' }) {
+    if (!isSupabaseConfigured()) {
+      return { data: null, error: new Error('Supabase authentication is not configured.') };
+    }
+    return await supabase.auth.verifyOtp({ token_hash, type });
+  },
+
   // Sign out
   async signOut() {
     if (!isSupabaseConfigured()) {

@@ -139,6 +139,24 @@ export default function App() {
       return undefined;
     }
 
+    // Direct password recovery verification via token_hash (bypasses GoTrue redirect issues)
+    if (typeof window !== 'undefined' && window.location?.search) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenHash = searchParams.get('token_hash');
+      const authType = searchParams.get('type') || (searchParams.get('auth') === 'reset-password' ? 'recovery' : null);
+      if (tokenHash && authType) {
+        authService.verifyOtp({ token_hash: tokenHash, type: authType }).then(({ data, error }) => {
+          if (!error && data?.session) {
+            if (authType === 'recovery') {
+              setCurrentView('auth-reset-password');
+            }
+          } else if (error) {
+            console.error('[auth] token_hash verifyOtp error:', error?.message || error);
+          }
+        });
+      }
+    }
+
     let alive = true;
     let validationId = 0;
     const validateSession = async (event, session) => {

@@ -271,6 +271,7 @@ test('6. dispatchPasswordResetEmail validates existence and sends recovery email
           return {
             data: {
               properties: {
+                hashed_token: 'test_token_123',
                 action_link: `https://test-project.supabase.co/auth/v1/verify?type=recovery&token=test_token_123&redirect_to=${encodeURIComponent('http://localhost:3000/?auth=reset-password')}`,
               },
             },
