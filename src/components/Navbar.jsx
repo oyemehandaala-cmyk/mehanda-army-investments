@@ -1,12 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowUpRight, ChevronRight, CreditCard, GraduationCap, Menu, MessageCircle,
-  PlayCircle, ShieldCheck, TrendingUp, UserRound, X
+  PlayCircle, ShieldCheck, Smartphone, TrendingUp, UserRound, X
 } from 'lucide-react';
 import BrandVerificationBadge from './BrandVerificationBadge';
 
 export default function Navbar({ currentView, setCurrentView, scrollTo, onMobileMenuChange }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      alert('📱 Mehanda Army Investments App:\nTo install this app on your phone, tap your browser menu (⋮) and tap "Install app" or "Add to Home screen".');
+    }
+  };
 
   const navLinks = [
     { name: 'About', href: '#about', icon: '🏢' },
@@ -112,6 +134,15 @@ export default function Navbar({ currentView, setCurrentView, scrollTo, onMobile
             >
               <CreditCard size={14} className="text-slate-500" />
               Payments
+            </button>
+            <button
+              type="button"
+              onClick={handleInstallClick}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50/70 px-3 text-xs font-bold text-amber-900 transition hover:bg-amber-100 hover:text-amber-950 cursor-pointer"
+              title="Install Mehanda Army App"
+            >
+              <Smartphone size={14} className="text-amber-600" />
+              Install App
             </button>
             <button
               type="button"
@@ -228,6 +259,24 @@ export default function Navbar({ currentView, setCurrentView, scrollTo, onMobile
                   </span>
                 </div>
                 <ChevronRight size={14} className="text-indigo-400 group-hover:text-indigo-600" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleInstallClick}
+                className="group w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 transition active:scale-[0.99] text-left border border-amber-200 cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-200 text-sm">
+                    📱
+                  </span>
+                  <span className="font-bold text-amber-950 text-xs">
+                    Install Official Mobile App
+                  </span>
+                </div>
+                <span className="text-[10px] bg-amber-300 text-amber-950 font-black px-1.5 py-0.5 rounded-md">
+                  PWA
+                </span>
               </button>
             </div>
 
