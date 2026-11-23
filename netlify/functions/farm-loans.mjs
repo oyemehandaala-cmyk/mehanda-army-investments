@@ -20,7 +20,7 @@ export async function handler(event) {
     const rawBody = event.isBase64Encoded
       ? Buffer.from(event.body || '', 'base64').toString('utf8')
       : event.body || '';
-    if (rawBody.length > 32768) {
+    if (rawBody.length > 2_097_152) {
       throw new Error('Request body is too large.');
     }
     const body = rawBody ? JSON.parse(rawBody) : {};

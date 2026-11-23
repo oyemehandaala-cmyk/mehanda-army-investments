@@ -405,11 +405,17 @@ export async function submitFarmLoanApplication(body, user, dependencies = {}) {
 
 export async function getCustomerFarmLoans(user, dependencies = {}) {
   const client = createServiceClient(dependencies.env || process.env, dependencies.createClient || createSupabaseClient);
-  const { data, error } = await client
-    .from('farm_loan_applications')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('submitted_at', { ascending: false });
+  
+  let query = client.from('farm_loan_applications').select('*');
+  if (user?.id && user?.email) {
+    query = query.or(`user_id.eq.${user.id},applicant_email.eq.${user.email.toLowerCase()}`);
+  } else if (user?.id) {
+    query = query.eq('user_id', user.id);
+  } else if (user?.email) {
+    query = query.eq('applicant_email', user.email.toLowerCase());
+  }
+
+  const { data, error } = await query.order('submitted_at', { ascending: false });
 
   if (error) {
     console.warn('[farm-loans] Query failed, returning empty:', error.message);

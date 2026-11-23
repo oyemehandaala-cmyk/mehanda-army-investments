@@ -50,7 +50,7 @@ const routes = {
   'webhook': webhook,
 };
 
-function isAllowedOrigin(origin) {
+export function isAllowedOrigin(origin) {
   if (!origin) return false;
   try {
     const { hostname, protocol } = new URL(origin);
@@ -58,6 +58,7 @@ function isAllowedOrigin(origin) {
     if (hostname === 'mehandaarmy.net' || hostname === 'www.mehandaarmy.net') return true;
     if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
     if (hostname.endsWith('.vercel.app')) return true;
+    if (hostname.endsWith('.netlify.app')) return true;
     if (hostname.endsWith('.github.io')) return true;
     return false;
   } catch {

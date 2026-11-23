@@ -689,17 +689,19 @@ export function assertSameOrigin(headers = {}) {
   if (isLocalOrigin && isLocalHost) return;
   if (originHost.includes('ngrok') && cleanHost.includes('ngrok')) return;
 
-  // Allow Mehanda Army Investments official domains (mehandaarmy.net <-> Vercel backend)
+  // Allow Mehanda Army Investments official domains (mehandaarmy.net <-> Vercel backend <-> Netlify hosting)
   const isOfficialOrigin = (
     originHost === 'mehandaarmy.net' ||
     originHost === 'www.mehandaarmy.net' ||
     originHost.endsWith('.vercel.app') ||
+    originHost.endsWith('.netlify.app') ||
     originHost.endsWith('.github.io')
   );
   const isOfficialHost = (
     cleanHost === 'mehandaarmy.net' ||
     cleanHost === 'www.mehandaarmy.net' ||
-    cleanHost.endsWith('.vercel.app')
+    cleanHost.endsWith('.vercel.app') ||
+    cleanHost.endsWith('.netlify.app')
   );
   if (isOfficialOrigin && isOfficialHost) return;
 

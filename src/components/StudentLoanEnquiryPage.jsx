@@ -42,6 +42,11 @@ import {
   createSyntheticSampleFile,
   MAX_TEST_DOCUMENT_SIZE,
 } from '../lib/studentLoanService';
+import {
+  saveDraftDocuments,
+  loadDraftDocuments,
+  clearDraftDocuments,
+} from '../lib/loanDocumentService';
 import EmailOtpVerification from './EmailOtpVerification.jsx';
 import StudentLoanTrackingCard from './StudentLoanTrackingCard.jsx';
 import CustomerDocumentsSection from './CustomerDocumentViewer.jsx';
@@ -150,13 +155,16 @@ export default function StudentLoanEnquiryPage({
     isCustomAmount: false,
     customAmount: '',
 
-    // Step 3: Documents (All 4 Mandatory)
-    documents: {
-      studentId: null,
-      signature: null,
-      addressProof: null,
-      academicMarksheet: null,
-    },
+    // Step 3: Documents (All 4 Mandatory - restored from draft if page was refreshed)
+    documents: (() => {
+      const saved = loadDraftDocuments('mai_student_loan_docs');
+      return saved && typeof saved === 'object' ? saved : {
+        studentId: null,
+        signature: null,
+        addressProof: null,
+        academicMarksheet: null,
+      };
+    })(),
 
     // Step 5: Consents & Verification Fee
     accuracyConsent: false,
@@ -616,21 +624,26 @@ export default function StudentLoanEnquiryPage({
     try {
       const doc = await uploadStudentLoanDocument(file, (pct) => {
         setSlotProgress((prev) => ({ ...prev, [slotKey]: Math.max(pct, 20) }));
-      });
-      setForm((current) => ({
-        ...current,
-        documents: {
+      }, slotKey);
+      const docEntry = {
+        path: doc.path,
+        name: doc.fileName,
+        fileName: doc.fileName,
+        contentType: doc.contentType,
+        size: doc.size,
+        confirmed: true,
+      };
+      setForm((current) => {
+        const updatedDocs = {
           ...current.documents,
-          [slotKey]: {
-            path: doc.path,
-            name: doc.fileName,
-            fileName: doc.fileName,
-            contentType: doc.contentType,
-            size: doc.size,
-            confirmed: true,
-          },
-        },
-      }));
+          [slotKey]: docEntry,
+        };
+        saveDraftDocuments('mai_student_loan_docs', updatedDocs);
+        return {
+          ...current,
+          documents: updatedDocs,
+        };
+      });
       setBackendDocument(doc);
       setFieldErrors((current) => ({ ...current, [slotKey]: '' }));
     } catch (err) {
@@ -659,13 +672,17 @@ export default function StudentLoanEnquiryPage({
         console.warn('Could not remove file from storage:', err);
       }
     }
-    setForm((current) => ({
-      ...current,
-      documents: {
+    setForm((current) => {
+      const updatedDocs = {
         ...current.documents,
         [slotKey]: null,
-      },
-    }));
+      };
+      saveDraftDocuments('mai_student_loan_docs', updatedDocs);
+      return {
+        ...current,
+        documents: updatedDocs,
+      };
+    });
     setSlotProgress((prev) => ({ ...prev, [slotKey]: 0 }));
     setFieldErrors((current) => ({ ...current, [slotKey]: '' }));
   };
@@ -687,6 +704,7 @@ export default function StudentLoanEnquiryPage({
   // Final Form Submission
   const handleFinalSubmit = async (event) => {
     event.preventDefault();
+    if (submitting) return;
     setSubmitError('');
     if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep5()) return;
     if (!emailVerification.isVerified || !emailVerification.verifiedEmail || emailVerification.verifiedEmail.toLowerCase() !== form.email.trim().toLowerCase()) {
@@ -750,6 +768,7 @@ export default function StudentLoanEnquiryPage({
       }
 
       setSavedApplication(application);
+      clearDraftDocuments('mai_student_loan_docs');
       setActiveTab('success');
       await onRefreshApplications?.();
     } catch (error) {

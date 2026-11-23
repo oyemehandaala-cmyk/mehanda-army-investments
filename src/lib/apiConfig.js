@@ -18,8 +18,8 @@ export function getApiBaseUrl() {
   // 2. Client-side origin detection
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    // Local development or running directly on Vercel deployment: relative /api works natively
-    if (host.includes('vercel.app') || host === 'localhost' || host === '127.0.0.1') {
+    // Local development, running directly on Vercel, or running on Netlify: relative /api works natively
+    if (host.includes('vercel.app') || host.includes('netlify.app') || host === 'localhost' || host === '127.0.0.1') {
       return '';
     }
     // If running on GitHub Pages (github.io) or mehandaarmy.net while DNS still routes via GitHub Pages:

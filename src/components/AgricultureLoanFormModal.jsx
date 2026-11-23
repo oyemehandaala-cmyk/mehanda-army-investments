@@ -22,6 +22,7 @@ import {
   Check,
 } from 'lucide-react';
 import { LOAN_CATEGORIES, submitAgricultureLoanApplication } from '../lib/loanService';
+import { uploadLoanDocument, saveDraftDocuments, loadDraftDocuments, clearDraftDocuments } from '../lib/loanDocumentService';
 import INDIA_LOCATIONS from '../data/indiaLocations.json';
 import EmailOtpVerification from './EmailOtpVerification.jsx';
 
@@ -72,6 +73,8 @@ export default function AgricultureLoanFormModal({
   const [formError, setFormError] = useState('');
   const [successApplication, setSuccessApplication] = useState(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState(false);
+  const [uploadingDocs, setUploadingDocs] = useState({});
+  const [uploadErrors, setUploadErrors] = useState({});
   const [emailVerification, setEmailVerification] = useState(() => ({
     isVerified: Boolean(user?.email && (user?.email_confirmed_at || user?.confirmed_at)),
     verifiedEmail: (user?.email && (user?.email_confirmed_at || user?.confirmed_at)) ? user.email : '',
@@ -81,56 +84,59 @@ export default function AgricultureLoanFormModal({
 
   const categoryConfig = LOAN_CATEGORIES[category] || LOAN_CATEGORIES.dairy_loan;
 
-  // Form State
-  const [formData, setFormData] = useState({
-    // Step 1: Personal & Contact
-    fullName: user?.fullName || user?.user_metadata?.full_name || '',
-    dateOfBirth: '',
-    phone: user?.phone || '',
-    email: user?.email || '',
-    state: 'Haryana',
-    district: '',
-    city: '',
-    address: '',
-    pincode: '',
+  // Form State with draft persistence
+  const [formData, setFormData] = useState(() => {
+    const savedDocs = loadDraftDocuments('mai_dairy_loan_docs') || {
+      aadhaarProof: null,
+      panProof: null,
+      farmProof: null,
+      bankPassbook: null,
+    };
+    return {
+      // Step 1: Personal & Contact
+      fullName: user?.fullName || user?.user_metadata?.full_name || '',
+      dateOfBirth: '',
+      phone: user?.phone || '',
+      email: user?.email || '',
+      state: 'Haryana',
+      district: '',
+      city: '',
+      address: '',
+      pincode: '',
 
-    // Step 2: KYC & Identification
-    aadhaarNumber: '',
-    panNumber: '',
-    voterId: '',
+      // Step 2: KYC & Identification
+      aadhaarNumber: '',
+      panNumber: '',
+      voterId: '',
 
-    // Step 3: Loan Details
-    loanAmount: category === 'dairy_loan' ? 300000 : category === 'student_loan' ? 1000 : 100000,
-    loanPurpose: PURPOSE_OPTIONS[category]?.[0] || (category === 'student_loan' ? 'College Tuition Fees & Semester Dues' : 'Livestock Farming'),
-    customPurpose: '',
+      // Step 3: Loan Details
+      loanAmount: category === 'dairy_loan' ? 300000 : category === 'student_loan' ? 1000 : 100000,
+      loanPurpose: PURPOSE_OPTIONS[category]?.[0] || (category === 'student_loan' ? 'College Tuition Fees & Semester Dues' : 'Livestock Farming'),
+      customPurpose: '',
 
-    // Step 3: Student Education Details
-    institutionName: '',
-    courseName: '',
-    qualification: 'Undergraduate Degree',
-    passingYear: '2026',
-    rollNumber: '',
+      // Step 3: Student Education Details
+      institutionName: '',
+      courseName: '',
+      qualification: 'Undergraduate Degree',
+      passingYear: '2026',
+      rollNumber: '',
 
-    // Step 3: Farming Details
-    currentLivestockCount: '0',
-    proposedLivestockCount: category === 'dairy_loan' ? '4' : '20',
-    landArea: '2 Acres',
-    landOwnership: 'Owned',
-    experienceYears: '3',
-    dailyMilkYieldLiters: '0',
-    milkBuyerOrCooperative: 'Local Cooperative / Dairy Society',
-    breedType: category === 'dairy_loan' ? 'Murrah / HF Cross' : category === 'sheep_loan' ? 'Nali / Marwari' : 'Beetal / Sirohi',
-    shedStatus: 'Available & Ready',
+      // Step 3: Farming Details
+      currentLivestockCount: '0',
+      proposedLivestockCount: category === 'dairy_loan' ? '4' : '20',
+      landArea: '2 Acres',
+      landOwnership: 'Owned',
+      experienceYears: '3',
+      dailyMilkYieldLiters: '0',
+      milkBuyerOrCooperative: 'Local Cooperative / Dairy Society',
+      breedType: category === 'dairy_loan' ? 'Murrah / HF Cross' : category === 'sheep_loan' ? 'Nali / Marwari' : 'Beetal / Sirohi',
+      shedStatus: 'Available & Ready',
 
-    // Step 4: Documents & Declarations
-    documents: {
-      aadhaarProof: 'sample-aadhaar-kyc.pdf',
-      panProof: 'sample-pan-card.pdf',
-      farmProof: category === 'student_loan' ? 'sample-student-id.pdf' : 'sample-land-ownership-proof.pdf',
-      bankPassbook: category === 'student_loan' ? 'sample-fee-receipt.pdf' : 'sample-bank-statement.pdf',
-    },
-    consentAccurate: false,
-    consentTerms: false,
+      // Step 4: Documents & Declarations
+      documents: savedDocs,
+      consentAccurate: false,
+      consentTerms: false,
+    };
   });
 
   // Available districts based on selected state
@@ -152,28 +158,46 @@ export default function AgricultureLoanFormModal({
     setFormError('');
   };
 
-  const handleFileUpload = (docKey, file) => {
+  const handleFileUpload = async (docKey, file) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must not exceed 5 MB.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((prev) => ({
-        ...prev,
-        documents: {
+    setUploadErrors((prev) => ({ ...prev, [docKey]: '' }));
+    setUploadingDocs((prev) => ({ ...prev, [docKey]: 15 }));
+
+    try {
+      const doc = await uploadLoanDocument({
+        file,
+        docKey,
+        loanType: category,
+        onProgress: (pct) => setUploadingDocs((prev) => ({ ...prev, [docKey]: pct })),
+      });
+
+      setFormData((prev) => {
+        const updatedDocs = {
           ...prev.documents,
           [docKey]: {
-            fileName: file.name,
-            contentType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
-            size: file.size,
-            dataUrl: reader.result,
+            path: doc.path,
+            fileName: doc.fileName,
+            contentType: doc.contentType,
+            size: doc.size,
+            confirmed: true,
+            uploadedAt: doc.uploadedAt,
           },
-        },
-      }));
-    };
-    reader.readAsDataURL(file);
+        };
+        saveDraftDocuments('mai_dairy_loan_docs', updatedDocs);
+        return {
+          ...prev,
+          documents: updatedDocs,
+        };
+      });
+    } catch (err) {
+      setUploadErrors((prev) => ({ ...prev, [docKey]: err.message || 'Upload failed. Please try again.' }));
+    } finally {
+      setUploadingDocs((prev) => {
+        const next = { ...prev };
+        delete next[docKey];
+        return next;
+      });
+    }
   };
 
   const handleCopyTrackingId = (id) => {
@@ -298,6 +322,7 @@ export default function AgricultureLoanFormModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!validateCurrentStep()) return;
 
     setIsSubmitting(true);
@@ -347,6 +372,7 @@ export default function AgricultureLoanFormModal({
       };
 
       const result = await submitAgricultureLoanApplication(payload);
+      clearDraftDocuments('mai_dairy_loan_docs');
       setSuccessApplication(result);
       onApplicationSubmitted?.(result);
     } catch (err) {
@@ -1033,29 +1059,56 @@ export default function AgricultureLoanFormModal({
                         },
                       ].map((docItem) => {
                         const currentDoc = formData.documents?.[docItem.key];
-                        const isCustom = typeof currentDoc === 'object' && currentDoc?.fileName;
-                        const fileName = isCustom ? currentDoc.fileName : currentDoc;
+                        const isUploaded = Boolean(currentDoc && (currentDoc.path || currentDoc.confirmed || currentDoc.fileName));
+                        const fileName = currentDoc?.fileName || (typeof currentDoc === 'string' ? currentDoc : '');
+                        const fileSizeKb = currentDoc?.size ? `${(currentDoc.size / 1024).toFixed(0)} KB` : '';
+                        const isUploading = typeof uploadingDocs[docItem.key] === 'number';
+                        const progress = uploadingDocs[docItem.key] || 0;
+                        const errorMsg = uploadErrors[docItem.key];
+
                         return (
                           <div key={docItem.key} className="flex flex-col justify-between p-3 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
                             <div className="flex items-start justify-between gap-1.5">
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                {isUploaded ? (
+                                  <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                ) : (
+                                  <AlertCircle size={15} className="text-amber-500 shrink-0" />
+                                )}
                                 <span className="font-bold text-slate-900 truncate">{docItem.label}</span>
                               </div>
-                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-800 border border-emerald-200 shrink-0">
-                                {isCustom ? 'Uploaded' : 'Digital KYC'}
+                              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold border shrink-0 ${
+                                isUploaded
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : isUploading
+                                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                    : 'bg-slate-100 text-slate-600 border-slate-200'
+                              }`}>
+                                {isUploading ? `Uploading ${progress}%` : isUploaded ? 'Confirmed ✓' : 'Required'}
                               </span>
                             </div>
+
+                            {isUploading && (
+                              <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-[#876A2E] h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                              </div>
+                            )}
+
+                            {errorMsg && (
+                              <p className="mt-1 text-[10px] text-red-600 font-medium">{errorMsg}</p>
+                            )}
+
                             <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[11px]">
-                              <span className="text-slate-500 truncate max-w-[150px]" title={fileName}>
-                                {fileName}
+                              <span className="text-slate-500 truncate max-w-[150px]" title={fileName || 'No document selected'}>
+                                {fileName ? `${fileName}${fileSizeKb ? ` (${fileSizeKb})` : ''}` : 'PDF, JPG, PNG up to 5 MB'}
                               </span>
                               <label className="cursor-pointer inline-flex items-center gap-1 font-bold text-[#876A2E] hover:underline">
-                                <Upload size={11} /> {isCustom ? 'Replace' : 'Upload'}
+                                <Upload size={11} /> {isUploaded ? 'Replace' : 'Upload'}
                                 <input
                                   type="file"
                                   accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,application/pdf"
                                   className="hidden"
+                                  disabled={isUploading}
                                   onChange={(e) => handleFileUpload(docItem.key, e.target.files?.[0])}
                                 />
                               </label>

@@ -1,5 +1,11 @@
 import { authService } from './supabaseClient.js';
 import { getApiUrl } from './apiConfig.js';
+import {
+  uploadLoanDocument,
+  removeLoanDocument as removeUnifiedLoanDoc,
+  getLoanDocumentSignedUrl as getUnifiedSignedUrl,
+  validateLoanFile,
+} from './loanDocumentService.js';
 
 export const LOAN_AMOUNTS = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 export const MAX_LOAN_AMOUNT = 1000;
@@ -95,119 +101,44 @@ export function createSyntheticSampleFile(docTitle, applicantName = 'Student App
   return new File([blob], `sample-${sanitizedTitle}.json`, { type: 'application/json' });
 }
 
-export async function uploadStudentLoanDocument(file, onProgress) {
-  if (!(file instanceof File)) {
-    throw new Error('Please select a valid document file.');
-  }
-
-  const isImageOrPdf = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'application/pdf',
-  ].includes(file.type) || /\.(jpe?g|png|webp|pdf)$/i.test(file.name);
-
-  const isTextOrJson = [
-    'text/plain',
-    'application/json',
-  ].includes(file.type) || /\.(txt|json)$/i.test(file.name);
-
-  if (!isImageOrPdf && !isTextOrJson) {
-    throw new Error('Supported document formats are JPG, JPEG, PNG, and PDF (up to 5 MB per file).');
-  }
-
-  if (file.size > MAX_DOCUMENT_SIZE) {
-    throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds the maximum allowed limit of 5 MB.`);
-  }
-
-  let effectiveContentType = file.type;
-  if (!effectiveContentType || effectiveContentType === 'application/octet-stream') {
-    if (/\.jpe?g$/i.test(file.name)) effectiveContentType = 'image/jpeg';
-    else if (/\.png$/i.test(file.name)) effectiveContentType = 'image/png';
-    else if (/\.webp$/i.test(file.name)) effectiveContentType = 'image/webp';
-    else if (/\.pdf$/i.test(file.name)) effectiveContentType = 'application/pdf';
-    else if (/\.txt$/i.test(file.name)) effectiveContentType = 'text/plain';
-    else if (/\.json$/i.test(file.name)) effectiveContentType = 'application/json';
-  }
-
-  const contentBase64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('The selected document file could not be read.'));
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      const separator = dataUrl.indexOf(',');
-      if (separator < 0) {
-        reject(new Error('The selected document file could not be encoded.'));
-        return;
-      }
-      resolve(dataUrl.slice(separator + 1));
-    };
-    reader.readAsDataURL(file);
+export async function uploadStudentLoanDocument(file, onProgress, docKey = 'studentId') {
+  return uploadLoanDocument({
+    file,
+    docKey,
+    loanType: 'student',
+    onProgress,
   });
-
-  return uploadStudentLoanTestFile({
-    fileName: file.name,
-    contentType: effectiveContentType,
-    size: file.size,
-    contentBase64,
-  }, onProgress);
 }
 
 export async function getDocumentSignedUrl(path) {
-  if (!path) throw new Error('Document path is required.');
-  const headers = {};
-  try {
-    const { accessToken } = await authService.getAccessToken();
-    if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`;
-    }
-  } catch {}
-
-  const response = await fetch(getApiUrl(`/api/student-loan-documents?path=${encodeURIComponent(path)}`), {
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
-
-  let result;
-  try {
-    result = await response.json();
-  } catch {
-    throw new Error('Document preview could not be loaded.');
-  }
-
-  if (!response.ok || !result.success || !result.signedUrl) {
-    throw new Error(result?.error || 'Document preview is currently unavailable.');
-  }
-
-  return result.signedUrl;
+  return getUnifiedSignedUrl(path);
 }
 
 export async function uploadStudentLoanTestFile(payload, onProgress) {
   const { accessToken, error } = await authService.getAccessToken();
   if (error || !accessToken) {
-    throw new Error('Sign in again before uploading a sample file.');
+    throw new Error('Sign in again before uploading a document.');
   }
 
   return new Promise((resolve, reject) => {
     const upload = new XMLHttpRequest();
-    upload.open('POST', '/api/student-loan-documents');
+    upload.open('POST', getApiUrl('/api/student-loan-documents'));
     upload.setRequestHeader('Content-Type', 'application/json');
     upload.setRequestHeader('Authorization', `Bearer ${accessToken}`);
     upload.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
     };
-    upload.onerror = () => reject(new Error('The sample file could not be uploaded.'));
+    upload.onerror = () => reject(new Error('The document file could not be uploaded. Please check your network and try again.'));
     upload.onload = () => {
       let result;
       try {
         result = JSON.parse(upload.responseText);
       } catch {
-        reject(new Error('The sample file service returned an invalid response.'));
+        reject(new Error('The document upload service returned an invalid response. Please try again.'));
         return;
       }
       if (upload.status < 200 || upload.status >= 300 || !result.success) {
-        reject(new Error(result.error || 'The sample file could not be uploaded.'));
+        reject(new Error(result.error || 'The document file could not be uploaded.'));
         return;
       }
       onProgress?.(100);
@@ -218,11 +149,7 @@ export async function uploadStudentLoanTestFile(payload, onProgress) {
 }
 
 export async function removeStudentLoanDocument(path) {
-  const result = await request('/api/student-loan-documents', {
-    method: 'DELETE',
-    body: JSON.stringify({ path }),
-  }, true);
-  return result.document;
+  return removeUnifiedLoanDoc(path);
 }
 
 export async function getStudentLoanCities(state, district, { signal } = {}) {

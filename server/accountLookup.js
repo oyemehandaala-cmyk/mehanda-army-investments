@@ -69,7 +69,14 @@ export async function findUserByEmail({
   }
 }
 
-export function buildPasswordResetEmailHtml({ email, actionLink }) {
+export function buildPasswordResetEmailHtml({ email, actionLink, emailOtp = null }) {
+  const otpBlock = emailOtp ? `
+      <div style="background: #f8fafc; border: 1px dashed #876A2E; border-radius: 12px; padding: 16px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 6px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Or Enter 6-Digit Recovery OTP</p>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: 6px; color: #10243B; font-family: monospace;">${emailOtp}</div>
+      </div>
+  ` : '';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -94,6 +101,8 @@ export function buildPasswordResetEmailHtml({ email, actionLink }) {
           Reset My Password →
         </a>
       </div>
+
+      ${otpBlock}
       
       <div style="background: #f8fafc; border-left: 4px solid #876A2E; padding: 12px 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
         <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #334155;">
@@ -117,14 +126,15 @@ export function buildPasswordResetEmailHtml({ email, actionLink }) {
 </html>`;
 }
 
-export function buildPasswordResetEmailText({ email, actionLink }) {
+export function buildPasswordResetEmailText({ email, actionLink, emailOtp = null }) {
+  const otpText = emailOtp ? `\nOr enter this 6-digit recovery code on the website: ${emailOtp}\n` : '';
   return `MEHANDA ARMY INVESTMENTS
 Official Secure Account Recovery
 
 Reset Your Password for ${email}:
 Open this secure link to choose a new password:
 ${actionLink}
-
+${otpText}
 This link is valid for 1 hour. If you did not request a password reset, please ignore this email.
 
 Helpline: +91 9812947813 | Email: info@mehandaarmy.net`;
@@ -190,6 +200,7 @@ export async function dispatchPasswordResetEmail({
 
   // 2. Generate secure Supabase action link using Admin API
   let actionLink = null;
+  let emailOtp = null;
   try {
     const { data: linkData, error: linkErr } = await client.auth.admin.generateLink({
       type: 'recovery',
@@ -204,20 +215,45 @@ export async function dispatchPasswordResetEmail({
       return { success: false, status: 500, error: linkErr.message || 'Could not generate recovery link.' };
     }
 
-    // Direct production recovery link bypassing Supabase cloud GoTrue localhost redirect
-    const hashedToken = linkData?.properties?.hashed_token;
-    if (hashedToken) {
-      let baseOrigin = 'https://mehandaarmy.net';
-      if (redirectTo && typeof redirectTo === 'string' && !redirectTo.includes('localhost') && !redirectTo.includes('127.0.0.1')) {
-        try {
-          baseOrigin = new URL(redirectTo).origin;
-        } catch {
-          // keep production domain
-        }
+    emailOtp = linkData?.properties?.email_otp || null;
+
+    // Extract hashed_token or token from action_link
+    let tokenHash = linkData?.properties?.hashed_token || null;
+    if (!tokenHash && linkData?.properties?.action_link) {
+      try {
+        const parsed = new URL(linkData.properties.action_link);
+        tokenHash = parsed.searchParams.get('token') || parsed.searchParams.get('token_hash');
+      } catch {}
+    }
+
+    // Determine client base origin (mehandaarmy.net or mehandaarmy.netlify.app)
+    let baseOrigin = 'https://mehandaarmy.net';
+    if (redirectTo && typeof redirectTo === 'string' && !redirectTo.includes('localhost') && !redirectTo.includes('127.0.0.1')) {
+      try {
+        baseOrigin = new URL(redirectTo).origin;
+      } catch {
+        baseOrigin = 'https://mehandaarmy.net';
       }
-      actionLink = `${baseOrigin}/?auth=reset-password&token_hash=${encodeURIComponent(hashedToken)}&type=recovery`;
-    } else {
-      actionLink = linkData?.properties?.action_link;
+    }
+
+    if (tokenHash) {
+      // Direct production recovery link - completely bypasses GoTrue redirect to localhost
+      actionLink = `${baseOrigin}/?auth=reset-password&token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
+    } else if (linkData?.properties?.action_link) {
+      actionLink = linkData.properties.action_link;
+      // Ensure actionLink redirect_to points to live production domain and never localhost
+      try {
+        const parsedUrl = new URL(actionLink);
+        const currentRedirect = parsedUrl.searchParams.get('redirect_to');
+        if (!currentRedirect || currentRedirect.includes('localhost') || currentRedirect.includes('127.0.0.1')) {
+          parsedUrl.searchParams.set('redirect_to', targetRedirect);
+          actionLink = parsedUrl.toString();
+        }
+      } catch {
+        actionLink = actionLink
+          .replace(/redirect_to=https?%3A%2F%2Flocalhost(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`)
+          .replace(/redirect_to=https?%3A%2F%2F127\.0\.0\.1(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`);
+      }
     }
   } catch (err) {
     console.error('[accountLookup] generateLink exception:', err.message);
@@ -228,27 +264,11 @@ export async function dispatchPasswordResetEmail({
     return { success: false, status: 500, error: 'Could not generate password recovery link. Please try again.' };
   }
 
-  // Ensure actionLink redirect_to points to live production domain and never localhost
-  if (typeof actionLink === 'string') {
-    try {
-      const parsedUrl = new URL(actionLink);
-      const currentRedirect = parsedUrl.searchParams.get('redirect_to');
-      if (!currentRedirect || currentRedirect.includes('localhost') || currentRedirect.includes('127.0.0.1')) {
-        parsedUrl.searchParams.set('redirect_to', targetRedirect);
-        actionLink = parsedUrl.toString();
-      }
-    } catch {
-      actionLink = actionLink
-        .replace(/redirect_to=https?%3A%2F%2Flocalhost(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`)
-        .replace(/redirect_to=https?%3A%2F%2F127\.0\.0\.1(?::\d+)?(?:%2F[^&]*)?/gi, `redirect_to=${encodeURIComponent(targetRedirect)}`);
-    }
-  }
-
   // 3. Deliver email via our configured SMTP / Resend delivery engine
   try {
     const { deliverEmailMessage } = await import('./emailOtpService.js');
-    const html = buildPasswordResetEmailHtml({ email: cleanEmail, actionLink });
-    const text = buildPasswordResetEmailText({ email: cleanEmail, actionLink });
+    const html = buildPasswordResetEmailHtml({ email: cleanEmail, actionLink, emailOtp });
+    const text = buildPasswordResetEmailText({ email: cleanEmail, actionLink, emailOtp });
     const subject = 'Reset Your Password - Mehanda Army Investments';
 
     if (typeof deliverEmailFn === 'function') {
