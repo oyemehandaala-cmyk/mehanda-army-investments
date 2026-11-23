@@ -104,6 +104,8 @@ export default function AuthPortal({
 
   // 6-digit Email OTP state for Account Registration
   const [signupOtp, setSignupOtp] = useState('');
+  const [recoveryOtp, setRecoveryOtp] = useState('');
+  const [showRecoveryOtpInput, setShowRecoveryOtpInput] = useState(false);
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [otpExpiresIn, setOtpExpiresIn] = useState(0);
   const cooldownTimerRef = useRef(null);
@@ -442,7 +444,38 @@ export default function AuthPortal({
       logAuthFailure('recovery', error);
       setErrorMessage(getAuthErrorMessage(error, 'recovery'));
     } else {
-      setSuccessMessage('If an account exists for that address, a password reset link has been sent to your email. Click the link to choose a new password.');
+      setShowRecoveryOtpInput(true);
+      setSuccessMessage('Password recovery link & 6-digit verification code have been dispatched to your email! Click the link or enter the 6-digit code below:');
+    }
+  };
+
+  const handleVerifyRecoveryOtp = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    const cleanOtp = recoveryOtp.replace(/\D/g, '').trim();
+    if (cleanOtp.length !== 6) {
+      setErrorMessage('Please enter the 6-digit code sent to your email.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await authService.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: cleanOtp,
+        type: 'recovery',
+      });
+      if (error || !data?.session) {
+        setErrorMessage(error?.message || 'Invalid or expired recovery code. Please check your email or request a new one.');
+      } else {
+        setAuthMode('reset-password');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -996,43 +1029,73 @@ export default function AuthPortal({
 
           {/* 4. FORGOT PASSWORD */}
           {authMode === 'forgot' && (
-            <form onSubmit={handleForgotPassword} className="space-y-2.5 sm:space-y-3.5">
-              <div>
-                <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-0.5 sm:mb-1">
-                  Enter Your Registered Email
-                </label>
-                <input 
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder=""
-                  className="w-full h-[38px] sm:h-[42px] px-3 sm:px-3.5 bg-white border border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-xs"
-                />
-              </div>
+            <div className="space-y-2.5 sm:space-y-3.5">
+              <form onSubmit={handleForgotPassword} className="space-y-2.5 sm:space-y-3.5">
+                <div>
+                  <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-0.5 sm:mb-1">
+                    Enter Your Registered Email
+                  </label>
+                  <input 
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder=""
+                    className="w-full h-[38px] sm:h-[42px] px-3 sm:px-3.5 bg-white border border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-xs"
+                  />
+                </div>
 
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full h-[40px] sm:h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-blue-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
-              >
-                {loading ? 'Sending Verification Email...' : 'Send Verification Link'}
-              </button>
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-[40px] sm:h-[44px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-blue-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
+                >
+                  {loading ? 'Sending Recovery Code...' : showRecoveryOtpInput ? 'Resend Recovery Code' : 'Send Recovery Code & Link'}
+                </button>
+              </form>
+
+              {/* 6-Digit Recovery OTP Entry Section */}
+              {showRecoveryOtpInput && (
+                <form onSubmit={handleVerifyRecoveryOtp} className="pt-2 border-t border-slate-200/80 space-y-2 sm:space-y-3">
+                  <div className="text-center">
+                    <p className="text-[11px] font-bold text-slate-800">
+                      Enter 6-Digit Code Received in Email:
+                    </p>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={recoveryOtp}
+                    onChange={(e) => setRecoveryOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full h-[42px] px-3 bg-slate-50 border-2 border-blue-500 focus:bg-white rounded-xl text-center font-mono text-xl sm:text-2xl tracking-[0.25em] font-extrabold text-blue-700 outline-none shadow-xs"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || recoveryOtp.length !== 6}
+                    className="w-full h-[40px] flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md shadow-emerald-500/20 active:scale-98 disabled:opacity-50 cursor-pointer"
+                  >
+                    {loading ? 'Verifying Code...' : 'Verify Code & Set New Password'}
+                  </button>
+                </form>
+              )}
 
               <p className="text-[10px] sm:text-[11px] text-slate-500 text-center leading-relaxed">
-                For security, we will send a password reset link to your verified email address.
+                You can either click the link in your email or enter the 6-digit code above.
               </p>
 
               <div className="text-center pt-0.5 sm:pt-1">
                 <button 
                   type="button"
-                  onClick={() => { setAuthMode('login'); setErrorMessage(''); setSuccessMessage(''); }}
+                  onClick={() => { setAuthMode('login'); setErrorMessage(''); setSuccessMessage(''); setShowRecoveryOtpInput(false); }}
                   className="text-xs font-semibold text-slate-600 hover:text-blue-700 inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <ArrowLeft size={13} /> Back to Sign In
                 </button>
               </div>
-            </form>
+            </div>
           )}
 
           {/* 5. RESET PASSWORD FORM */}

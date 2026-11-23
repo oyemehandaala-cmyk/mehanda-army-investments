@@ -338,8 +338,8 @@ export const authService = {
     }
   },
 
-  // Verify OTP
-  async verifyOtp({ email, token, type = 'email' }) {
+  // Verify OTP (email/sms/recovery) or token_hash (from password recovery email link)
+  async verifyOtp({ token_hash, email, token, phone, type = 'email' }) {
     if (!isSupabaseConfigured()) {
       return {
         data: null,
@@ -351,10 +351,25 @@ export const authService = {
     }
 
     try {
+      if (token_hash) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: type || 'recovery',
+        });
+        return { data, error };
+      }
+      if (phone) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          phone,
+          token,
+          type: type || 'sms',
+        });
+        return { data, error };
+      }
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
-        type,
+        type: type || 'email',
       });
       return { data, error };
     } catch (err) {
@@ -424,13 +439,7 @@ export const authService = {
     }
   },
 
-  // Verify OTP or token_hash (e.g. from password recovery email link)
-  async verifyOtp({ token_hash, type = 'recovery' }) {
-    if (!isSupabaseConfigured()) {
-      return { data: null, error: new Error('Supabase authentication is not configured.') };
-    }
-    return await supabase.auth.verifyOtp({ token_hash, type });
-  },
+
 
   // Sign out
   async signOut() {
