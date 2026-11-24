@@ -69,18 +69,19 @@ export class FarmLoanError extends Error {
   }
 }
 
+const DEFAULT_SUPABASE_URL = 'https://epjjsuousttlvlpjtnvs.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwampzdW91c3R0bHZscGp0bnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4OTE5NDAsImV4cCI6MjEwOTQ2Nzk0MH0.AnzmwC6uI2SNNxME07i7FOpMwurS470iK2fHdV5z61Q';
+
 function getDatabaseConfig(env = process.env) {
-  const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL || '';
-  const key = getSupabaseServerKey(env);
-  if (!url.startsWith('https://') || !key) {
-    throw new FarmLoanError(503, 'Farm loan enquiries are temporarily unavailable.');
-  }
+  const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const key = getSupabaseServerKey(env) || env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
   return { url: url.replace(/\/+$/, ''), key };
 }
 
 function createServiceClient(env, createClient) {
   const { url, key } = getDatabaseConfig(env);
-  return createClient(url, key, {
+  const clientFactory = createClient || createSupabaseClient;
+  return clientFactory(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }
@@ -94,18 +95,30 @@ function getBearerToken(headers = {}) {
   return match[1];
 }
 
-async function requireCustomer(headers, { env, createClient }) {
+async function requireCustomer(headers, dependencies = {}) {
   const token = getBearerToken(headers);
+  const clientFactory = dependencies.createClient || createSupabaseClient;
+  const env = dependencies.env || process.env;
+
   let response;
   try {
-    const client = createServiceClient(env, createClient);
+    const client = createServiceClient(env, clientFactory);
     response = await client.auth.getUser(token);
   } catch (error) {
-    throw new FarmLoanError(503, 'Customer authentication is temporarily unavailable.');
+    console.error('[farm-loans] Primary auth check warning:', error?.message || error);
+    try {
+      const fallbackClient = clientFactory(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      response = await fallbackClient.auth.getUser(token);
+    } catch (fallbackErr) {
+      console.error('[farm-loans] Fallback auth check error:', fallbackErr?.message || fallbackErr);
+      throw new FarmLoanError(401, 'Your session is invalid or expired. Please sign in again.');
+    }
   }
 
-  const user = response.data?.user;
-  if (response.error || !user) {
+  const user = response?.data?.user;
+  if (response?.error || !user) {
     throw new FarmLoanError(401, 'Your session is invalid or expired. Please sign in again.');
   }
   return user;

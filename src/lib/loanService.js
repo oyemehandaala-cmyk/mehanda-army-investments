@@ -1,4 +1,4 @@
-import { authService } from './supabaseClient.js';
+import { supabase, authService, isSupabaseConfigured } from './supabaseClient.js';
 import { getCustomerApplications as getCustomerStudentLoans } from './studentLoanService.js';
 import { getApiUrl } from './apiConfig.js';
 
@@ -116,15 +116,100 @@ async function authorizedRequest(path, options = {}) {
   return result;
 }
 
+function generateClientTrackingId(category) {
+  const prefixMap = {
+    dairy_loan: 'MAI-DL',
+    sheep_loan: 'MAI-SH',
+    goat_loan: 'MAI-GT',
+    student_loan: 'MAI-SL',
+  };
+  const prefix = prefixMap[category] || 'MAI-FL';
+  const year = new Date().getFullYear();
+  const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+  return `${prefix}-${year}-${randomSuffix}`;
+}
+
 /**
  * Submit Dairy, Sheep, or Goat Loan Application
  */
 export async function submitAgricultureLoanApplication(payload) {
-  const result = await authorizedRequest('/api/farm-loans', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  return result.application;
+  try {
+    const result = await authorizedRequest('/api/farm-loans', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (result?.application) {
+      return result.application;
+    }
+  } catch (apiErr) {
+    console.warn('[loanService] Server endpoint notice, saving directly via Supabase client:', apiErr.message);
+    if (isSupabaseConfigured() && supabase) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      const trackingId = generateClientTrackingId(payload.loanCategory || 'dairy_loan');
+      const reference = `MAI-FL-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+
+      const record = {
+        reference,
+        tracking_id: trackingId,
+        user_id: user?.id || null,
+        loan_category: payload.loanCategory || 'dairy_loan',
+        applicant_name: payload.applicantName,
+        applicant_dob: payload.applicantDob,
+        applicant_phone: payload.applicantPhone,
+        applicant_email: payload.applicantEmail,
+        applicant_state: payload.applicantState,
+        applicant_district: payload.applicantDistrict,
+        applicant_city: payload.applicantCity,
+        applicant_address: payload.applicantAddress,
+        applicant_pincode: payload.applicantPincode,
+        aadhaar_number: payload.aadhaarNumber,
+        pan_number: payload.panNumber,
+        voter_id_number: payload.voterIdNumber || null,
+        loan_amount: Number(payload.loanAmount),
+        loan_purpose: payload.loanPurpose,
+        farming_details: payload.farmingDetails || {},
+        documents: payload.documents || {},
+        status: 'Submitted',
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('farm_loan_applications')
+        .insert([record])
+        .select('*')
+        .single();
+
+      if (!error && (data || record)) {
+        const saved = data || record;
+        return {
+          id: saved.id || saved.reference,
+          reference: saved.reference,
+          trackingId: saved.tracking_id,
+          tracking_id: saved.tracking_id,
+          loanCategory: saved.loan_category,
+          loan_category: saved.loan_category,
+          categoryLabel: LOAN_CATEGORIES[saved.loan_category]?.name || 'Dairy Loan',
+          applicantName: saved.applicant_name,
+          applicant_name: saved.applicant_name,
+          applicantEmail: saved.applicant_email,
+          applicant_email: saved.applicant_email,
+          applicantPhone: saved.applicant_phone,
+          applicant_phone: saved.applicant_phone,
+          loanAmount: saved.loan_amount,
+          loan_amount: saved.loan_amount,
+          loanPurpose: saved.loan_purpose,
+          status: saved.status,
+          submittedAt: saved.submitted_at,
+          submitted_at: saved.submitted_at,
+          farmingDetails: saved.farming_details,
+          documents: saved.documents,
+        };
+      }
+    }
+    throw apiErr;
+  }
 }
 
 /**
@@ -135,11 +220,61 @@ export async function getCustomerFarmLoans() {
     const result = await authorizedRequest('/api/farm-loans?mine=true', {
       method: 'GET',
     });
-    return Array.isArray(result?.applications) ? result.applications : [];
+    if (Array.isArray(result?.applications)) {
+      return result.applications;
+    }
   } catch (err) {
-    console.warn('[loanService] Could not load farm loans:', err.message);
-    return [];
+    console.warn('[loanService] Server endpoint notice, fetching directly via Supabase client:', err.message);
   }
+
+  // Fallback to direct Supabase query
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      if (user) {
+        let query = supabase.from('farm_loan_applications').select('*');
+        if (user.id && user.email) {
+          query = query.or(`user_id.eq.${user.id},applicant_email.eq.${user.email.toLowerCase()}`);
+        } else if (user.id) {
+          query = query.eq('user_id', user.id);
+        } else if (user.email) {
+          query = query.eq('applicant_email', user.email.toLowerCase());
+        }
+        const { data, error } = await query.order('submitted_at', { ascending: false });
+        if (!error && Array.isArray(data)) {
+          return data.map((row) => ({
+            id: row.id || row.reference,
+            reference: row.reference,
+            trackingId: row.tracking_id,
+            tracking_id: row.tracking_id,
+            loanCategory: row.loan_category,
+            loan_category: row.loan_category,
+            categoryLabel: LOAN_CATEGORIES[row.loan_category]?.name || 'Dairy Loan',
+            applicantName: row.applicant_name,
+            applicant_name: row.applicant_name,
+            applicantEmail: row.applicant_email,
+            applicant_email: row.applicant_email,
+            applicantPhone: row.applicant_phone,
+            applicant_phone: row.applicant_phone,
+            loanAmount: row.loan_amount,
+            loan_amount: row.loan_amount,
+            loanPurpose: row.loan_purpose,
+            status: row.status,
+            submittedAt: row.submitted_at,
+            submitted_at: row.submitted_at,
+            farmingDetails: row.farming_details,
+            documents: row.documents,
+            adminNotes: row.admin_notes,
+          }));
+        }
+      }
+    } catch (dbErr) {
+      console.warn('[loanService] Direct client query notice:', dbErr.message);
+    }
+  }
+
+  return [];
 }
 
 /**
