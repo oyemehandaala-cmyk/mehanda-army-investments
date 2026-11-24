@@ -43,9 +43,6 @@ SET public = false,
 -- 2. STORAGE RLS POLICIES FOR LOAN DOCUMENTS
 -- ------------------------------------------------------------------------------
 
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 -- Allow authenticated users to upload documents into their own folder ({user_id}/*)
 DROP POLICY IF EXISTS "Customers upload own student loan documents" ON storage.objects;
 CREATE POLICY "Customers upload own student loan documents"
